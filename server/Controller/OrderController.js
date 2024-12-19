@@ -14,22 +14,51 @@ const getPendingOrders = async (req, res) => {
 
 
 
+const generateUniqueOrderId = async () => {
+  const maxAttempts = 10;
+  let orderId;
+  let isUnique = false;
+  let attempts = 0;
+
+  do {
+    
+    const randomNum = Math.floor(Math.random() * 90000) + 10000; 
+    orderId = `ORD#${randomNum}`;
+
+  
+    const existingOrder = await Order.findOne({ orderId });
+    if (!existingOrder) {
+      isUnique = true;
+    }
+
+    attempts++;
+  } while (!isUnique && attempts < maxAttempts);
+
+  if (!isUnique) {
+    throw new Error("Unable to generate a unique orderId after multiple attempts.");
+  }
+
+  return orderId;
+};
+
 const createOrder = async (req, res) => {
   try {
     const {
       userId,
       items,
       amount,
-      orderId,
       paymentStatus,
       deliveryPersonId,
       location,
     } = req.body;
 
     // Validate required fields
-    if (!userId || !amount || !orderId || !paymentStatus) {
+    if (!userId || !amount || !paymentStatus) {
       return res.status(400).json({ message: "Missing required fields." });
     }
+
+    // Generate a unique orderId
+    const orderId = await generateUniqueOrderId();
 
     // Create a new order
     const newOrder = await Order.create({

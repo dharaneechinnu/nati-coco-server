@@ -20,6 +20,7 @@ const OrderSchema = new mongoose.Schema({
   paymentStatus: { 
     type: String,
      enum: ["Pending", "Completed"],
+     default:"Pending",
       required: true 
     },
   deliveryPersonId: {

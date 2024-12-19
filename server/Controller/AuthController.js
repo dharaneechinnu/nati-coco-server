@@ -32,12 +32,10 @@ const login = async (req, res) => {
             res.status(200).json({
                 accessToken,
                 user: {
+                    userId:user._id,
                     name: user.name,
                     mobileno: user.mobileno,
-                    email: user.email, // Include email if needed
-                    studentId: user.studentId, // Optionally include other fields
-                    role: user.role,
-                    batchno: user.batchno,
+                    email: user.email,
                 }
             });
         } else {

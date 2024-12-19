@@ -43,6 +43,7 @@ const verifyPayment = async (req, res) => {
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,
+        status:true,
       });
 
       return res.status(200).json({ message: "Payment verified successfully" });

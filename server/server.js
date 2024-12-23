@@ -8,6 +8,7 @@ const authRoutes = require('./router/AuthRouter');
 const paymentRoutes = require('./router/PaymentRouter');
 const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
+const cartRoutes = require('./router/CartRoute');
 const PORT = process.env.PORT || 3500;
 const MONGODB_URL = process.env.MONGO_URL;
 
@@ -61,6 +62,8 @@ app.use('/auth', authRoutes);
 app.use('/payment', paymentRoutes);
 //Order list get post And Pending Order
 app.use('/api/orders', orderRoutes);
+
+app.use('/cart', cartRoutes);
 
 
 //Admin API

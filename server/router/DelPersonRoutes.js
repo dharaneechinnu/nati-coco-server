@@ -7,7 +7,6 @@ router.post('/add', addDeliveryPerson);
 
 router.post("/update-location", updateLocation);
 
-
 router.post("/assign", assignDeliveryPerson);
 
 router.get("/location/:orderId", getDeliveryPersonLocation);

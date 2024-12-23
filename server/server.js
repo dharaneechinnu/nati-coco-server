@@ -14,7 +14,8 @@ const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
 const addtocartRouter = require('./router/CartRouter');
 
-
+//Find Store
+const storeRoutes = require('./router/StoreRoute');
 
 
 const app = express();
@@ -71,13 +72,12 @@ app.use('/payment', paymentRoutes);
 app.use('/api/orders', orderRoutes);
 
 app.use('/api/addtocart', addtocartRouter);
-
 //Admin API
 
 //Add Delivery Person and Get locatio and for admin and user.
 app.use('/api/delivery', DelPersonRouter);
 
-
+app.use('/api/stores', storeRoutes);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

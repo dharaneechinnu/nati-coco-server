@@ -16,4 +16,6 @@ const DeliveryPersonSchema = new mongoose.Schema({
   availability: { type: Boolean, required: true, default: true },
 }, { timestamps: true });
 
-module.exports = mongoose.model("DeliveryPerson", DeliveryPersonSchema);
+
+const DeliveryPersonModel = mongoose.model("DeliveryPerson", DeliveryPersonSchema);
+module.exports = DeliveryPersonModel;

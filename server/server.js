@@ -4,13 +4,24 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
+const PORT = process.env.PORT || 3500;
+const MONGODB_URL = process.env.MONGO_URL;
+
+//Routes
 const authRoutes = require('./router/AuthRouter');
 const paymentRoutes = require('./router/PaymentRouter');
 const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
+<<<<<<< HEAD
+const addtocartRouter = require('./router/CartRouter');
+
+
+
+=======
 const cartRoutes = require('./router/CartRoute');
 const PORT = process.env.PORT || 3500;
 const MONGODB_URL = process.env.MONGO_URL;
+>>>>>>> 4a48595c24b3b40527fbe5d0e0b7d11d158cfbe9
 
 const app = express();
 const server = http.createServer(app);
@@ -54,21 +65,27 @@ io.on("connection", (socket) => {
   });
 });
 
-// API Routes
+// API Routes.
 
-//Login
+//Login.
 app.use('/auth', authRoutes);
-//Register
+
+//Register.
 app.use('/payment', paymentRoutes);
-//Order list get post And Pending Order
+
+//Order list get post And Pending Order.
 app.use('/api/orders', orderRoutes);
 
+<<<<<<< HEAD
+app.use('/api/addtocart', addtocartRouter);
+=======
 app.use('/cart', cartRoutes);
 
+>>>>>>> 4a48595c24b3b40527fbe5d0e0b7d11d158cfbe9
 
 //Admin API
 
-//Add Delivery Person and Get locatio and for admin and user 
+//Add Delivery Person and Get locatio and for admin and user.
 app.use('/api/delivery', DelPersonRouter);
 
 

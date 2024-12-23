@@ -1,16 +1,4 @@
 const Order = require("../models/Ordermodels");
-const DeliveryPerson = require("../models/DeliveryModels");
-
-// Get all pending orders
-const getPendingOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ status: "Pending" });
-    res.status(200).json(orders);
-  } catch (error) {
-    console.error("Error fetching pending orders:", error);
-    res.status(500).json({ message: "Internal Server Error!" });
-  }
-};
 
 
 
@@ -52,15 +40,14 @@ const createOrder = async (req, res) => {
       location,
     } = req.body;
 
-    // Validate required fields
+ 
     if (!userId || !amount || !paymentStatus) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    // Generate a unique orderId
+    
     const orderId = await generateUniqueOrderId();
 
-    // Create a new order
     const newOrder = await Order.create({
       userId,
       items,
@@ -91,4 +78,4 @@ const getOrders = async (req, res) => {
 
 
 
-module.exports ={getPendingOrders, createOrder, getOrders }
+module.exports ={createOrder, getOrders }

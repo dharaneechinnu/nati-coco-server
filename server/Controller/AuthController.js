@@ -19,7 +19,7 @@ const login = async (req, res) => {
 
         const isValidate = await bcrypt.compare(password, user.password);
         if (isValidate) {
-            // Remove the password from the user object before sending it
+            
             const { password, ...userWithoutPassword } = user.toObject();
 
             const accessToken = jwt.sign(
@@ -28,7 +28,6 @@ const login = async (req, res) => {
                 { expiresIn: '1d' }
             );
 
-            // Send accessToken, name, mobileno, and role to the frontend
             res.status(200).json({
                 accessToken,
                 user: {
@@ -96,7 +95,7 @@ const gtpOtps = async (req, res) => {
         const otp = generateOTP();
 
         user.otpToken = otp;
-        user.otpExpire = Date.now() + 3600000; // 1 hour expiry time
+        user.otpExpire = Date.now() + 3600000; 
 
         await user.save();
 
@@ -148,24 +147,24 @@ const Verifyotp = async (req, res) => {
             return res.status(400).json({ message: "Email and OTP are required" });
         }
 
-        // Retrieve the user by email
+      
         const user = await usermodel.findOne({ email });
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Check if OTP is expired
+      
         if (user.otpExpire < Date.now()) {
             return res.status(400).json({ message: "OTP has expired" });
         }
 
-        // Check if OTP matches
+       
         if (user.otpToken === otp) {
-            // Mark the user as verified and clear OTP fields
+          
             user.otpToken = null;
             user.otpExpire = null;
-            user.verified = true; // Ensure your schema has a 'verified' field
+            user.verified = true; 
 
             await user.save(); 
 
@@ -269,7 +268,7 @@ const respassword = async (req, res) => {
     } catch (error) {
         console.error("Error resetting password:", error);
 
-        // Provide a generic message for internal server errors
+    
         res.status(500).json({ message: "Internal server error" });
     }
 };

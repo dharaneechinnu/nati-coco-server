@@ -3,32 +3,33 @@ const mongoose = require('mongoose')
 const Order = require("../models/Ordermodels");
 
 
-// Add a new delivery person
+
 const addDeliveryPerson = async (req, res) => {
   try {
     const { name, deliveryPersonId } = req.body;
 
-    // Validate input
+    
     if (!name || !deliveryPersonId) {
       return res.status(400).json({ message: 'Name and phone are required.' });
     }
 
-    // Check for existing phone
+    
     const existingPerson = await DeliveryPerson.findOne({ deliveryPersonId });
     if (existingPerson) {
       return res.status(400).json({ message: 'deliveryPersonId already exists.' });
     }
 
-    // Create new delivery person
+    
     const newPerson = await DeliveryPerson.create({ name, deliveryPersonId });
     res.status(201).json({ message: 'Delivery person added successfully.', deliveryPerson: newPerson });
   } catch (error) {
     console.error('Error adding delivery person:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
+
 };
 
-// Update delivery person's location
+
 const updateLocation = async (req, res) => {
   const { deliveryPersonId, latitude, longitude } = req.body;
 
@@ -55,24 +56,27 @@ const assignDeliveryPerson = async (req, res) => {
   const { orderId, deliveryPersonId } = req.body;
 
   try {
-   
-    // Check if delivery person is available
+    
     const deliveryPerson = await DeliveryPerson.findOne({ deliveryPersonId: deliveryPersonId });
     if (!deliveryPerson || !deliveryPerson.availability) {
       return res.status(400).json({ message: "Delivery person not available!" });
     }
 
-    // Assign delivery person to the order
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      { deliveryPersonId },
-      { new: true }
+    
+    const orderIdString = String(orderId); 
+
+      const order = await Order.findOneAndUpdate(
+      { orderId: orderIdString }, 
+      
+      { deliveryPersonId },       
+      { new: true }               
     );
 
+const delpersonid = String(deliveryPersonId);
     if (order) {
-      // Update delivery person's availability
-      await DeliveryPerson.findByIdAndUpdate(
-        deliveryPersonId,
+  
+      await DeliveryPerson.findOneAndUpdate(
+        {deliveryPersonId:delpersonid},
         { availability: false },
         { new: true }
       );

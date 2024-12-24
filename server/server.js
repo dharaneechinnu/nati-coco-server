@@ -60,6 +60,8 @@ io.on("connection", (socket) => {
   });
 });
 
+
+
 // API Routes.
 
 //Login.
@@ -72,12 +74,26 @@ app.use('/payment', paymentRoutes);
 app.use('/api/orders', orderRoutes);
 
 app.use('/api/addtocart', addtocartRouter);
+
+
+
+
 //Admin API
 
 //Add Delivery Person and Get locatio and for admin and user.
-app.use('/api/delivery', DelPersonRouter);
+
+app.use('/Admin',require('./router/AdminRouter'))
+app.use('/Admin',require('./router/AdminRouter'))
+
+
+
+
+
+
+
 
 app.use('/api/stores', storeRoutes);
+app.use('/Adminstore/delivery', DelPersonRouter);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

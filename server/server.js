@@ -13,7 +13,8 @@ const paymentRoutes = require('./router/PaymentRouter');
 const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
 const addtocartRouter = require('./router/CartRouter');
-
+// Get City owners
+const cityOwnersRouter = require('./router/GetCityownerRouter');
 //Find Store
 const storeRoutes = require('./router/StoreRoute');
 
@@ -75,8 +76,8 @@ app.use('/api/orders', orderRoutes);
 
 app.use('/api/addtocart', addtocartRouter);
 
-
-
+// Get cityowners
+app.use('/api', cityOwnersRouter);
 
 //Admin API
 

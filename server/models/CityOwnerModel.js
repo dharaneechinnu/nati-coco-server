@@ -35,6 +35,6 @@ const CityOwnerschema = new mongoose.Schema({
 
 
 
-const CityOwnerModels= mongoose.model('CityOwner', CityOwnerschema);
+const CityOwnerModels= mongoose.model('citystore', CityOwnerschema);
 
 module.exports = CityOwnerModels;

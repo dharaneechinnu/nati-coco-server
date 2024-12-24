@@ -89,6 +89,9 @@ app.use('/Admin',require('./router/AdminRouter'))
 
 
 
+//CityOwner
+
+app.use('/citystore',require('./router/CityStoreRouter'))
 
 
 

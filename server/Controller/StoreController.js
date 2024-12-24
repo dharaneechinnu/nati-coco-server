@@ -36,7 +36,6 @@ const addStore = async (req, res) => {
 const findNearestStore = async (req, res) => { // Added async
   try {
     const { latitude, longitude } = req.query;
-
     // Validate input
     if (!latitude || !longitude) {
       return res.status(400).json({ error: 'Latitude and longitude are required' });

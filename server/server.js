@@ -13,7 +13,8 @@ const paymentRoutes = require('./router/PaymentRouter');
 const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
 const addtocartRouter = require('./router/CartRouter');
-
+// Get City owners
+const cityOwnersRouter = require('./router/GetCityownerRouter');
 //Find Store
 const storeRoutes = require('./router/StoreRoute');
 
@@ -60,6 +61,8 @@ io.on("connection", (socket) => {
   });
 });
 
+
+
 // API Routes.
 
 //Login.
@@ -72,12 +75,29 @@ app.use('/payment', paymentRoutes);
 app.use('/api/orders', orderRoutes);
 
 app.use('/api/addtocart', addtocartRouter);
+
+// Get cityowners
+app.use('/api', cityOwnersRouter);
+
 //Admin API
 
 //Add Delivery Person and Get locatio and for admin and user.
-app.use('/api/delivery', DelPersonRouter);
+
+app.use('/Admin',require('./router/AdminRouter'))
+app.use('/Admin',require('./router/AdminRouter'))
+
+
+
+
+
+//CityOwner
+
+app.use('/citystore',require('./router/CityStoreRouter'))
+
+
 
 app.use('/api/stores', storeRoutes);
+app.use('/Adminstore/delivery', DelPersonRouter);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

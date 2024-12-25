@@ -1,5 +1,6 @@
 const express = require("express");
-const { updateLocation,addDeliveryPerson,getDeliveryPersonLocation,findNearestDeliveryPerson } = require("../Controller/DeliveryPerson");
+const { updateLocation,getDeliveryPersonLocation,findNearestDeliveryPerson } = require("../Controller/Rider/DeliveryPerson");
+const { addDeliveryPerson } = require("../Controller/ChickenStore/ChickenStoreController");
 
 const router = express.Router();
 

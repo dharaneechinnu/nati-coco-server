@@ -1,6 +1,4 @@
-const Order = require("../models/Ordermodels");
-
-
+const Order = require("../../models/Ordermodels");
 
 const generateUniqueOrderId = async () => {
   const maxAttempts = 10;
@@ -75,7 +73,43 @@ const getOrders = async (req, res) => {
   }
 };
 
+const findNearestStoreAndDisplay = async (req, res) => { // Added async
+  try {
+    const { latitude, longitude } = req.query;
+    // Validate input
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    const userLocation = { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
+
+    // Get all stores from database
+    const allStores = await Store.find(); // Added: Get stores from database
+
+    if (!allStores.length) {
+      return res.status(404).json({ message: 'No stores found' });
+    }
+
+    // Find the nearest store
+    const nearestStore = allStores.reduce((closest, store) => {
+      const storeLocation = {
+        latitude: store.latitude,
+        longitude: store.longitude
+      };
+      const distanceToUser = geolib.getDistance(userLocation, storeLocation);
+      return !closest || distanceToUser < closest.distance
+        ? { ...store.toObject(), distance: distanceToUser }
+        : closest;
+    }, null);
+
+    res.json({
+      message: `The nearest store is ${nearestStore.name}`,
+      store: nearestStore,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while finding nearest store', details: error.message });
+  }
+};
 
 
-
-module.exports ={createOrder, getOrders }
+module.exports ={createOrder, getOrders ,findNearestStoreAndDisplay}

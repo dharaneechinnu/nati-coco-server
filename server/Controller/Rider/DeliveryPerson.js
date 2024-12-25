@@ -1,32 +1,11 @@
-const DeliveryPerson = require("../models/DeliveryModels");
+const DeliveryPerson = require("../../models/DeliveryModels");
 const mongoose = require('mongoose')
-const Order = require("../models/Ordermodels");
+const Order = require("../../models/Ordermodels");
 const geolib = require("geolib");
 
 
-const addDeliveryPerson = async (req, res) => {
-  try {
-    const { name, deliveryPersonId } = req.body;
+//move to ChickenStore
 
-    if (!name || !deliveryPersonId) {
-      return res.status(400).json({ message: "Name and deliveryPersonId are required." });
-    }
-
-    const existingPerson = await DeliveryPerson.findOne({ deliveryPersonId });
-    if (existingPerson) {
-      return res.status(400).json({ message: "Delivery person with this ID already exists." });
-    }
-
-    const newPerson = await DeliveryPerson.create({ name, deliveryPersonId });
-    res.status(201).json({
-      message: "Delivery person added successfully.",
-      deliveryPerson: newPerson,
-    });
-  } catch (error) {
-    console.error("Error adding delivery person:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
 
 // Find and assign the nearest delivery person
 const findNearestDeliveryPerson = async (req, res) => {
@@ -156,4 +135,4 @@ const getDeliveryPersonLocation = async (req, res) => {
 };
 
 
-module.exports={updateLocation,addDeliveryPerson,getDeliveryPersonLocation,findNearestDeliveryPerson}
+module.exports={updateLocation,getDeliveryPersonLocation,findNearestDeliveryPerson}

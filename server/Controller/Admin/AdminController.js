@@ -1,8 +1,9 @@
-const Admin = require('../models/AdminModel');
-const CityAdmin = require('../models/CityOwnerModel');
+const Admin = require('../../models/AdminModel');
+const CityAdmin = require('../../models/CityOwnerModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const CityOwnerModels = require('../../models/CityOwnerModel');
 
 //Admin Login
 const loginAdmin = async (req, res) => {
@@ -48,7 +49,8 @@ const loginAdmin = async (req, res) => {
 };
 
 // AddCityStoreAdmin Controller
-const AddCityStoreAdmin = async (req, res) => {
+//addMainAdmin - no citystore
+const AddChickenStore = async (req, res) => {
   const { name, email, password, mobileno, locations, cityName } = req.body;
   try {
      // Validate location data
@@ -117,7 +119,27 @@ const AddCityStoreAdmin = async (req, res) => {
   }
 };
 
+const getCityOwners = async (req, res) => {
+  try {
+    // Fetch all city owners and exclude the 'password' field
+    const cityOwners = await CityOwnerModels.find().select('-password');
+
+    if (!cityOwners.length) {
+      return res.status(404).json({ message: 'No city owners found' });
+    }
+
+    res.status(200).json({
+      message: 'City owners retrieved successfully',
+      cityOwners,
+    });
+  } catch (error) {
+    console.error('Error retrieving city owners:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   loginAdmin,
-  AddCityStoreAdmin,
+  AddChickenStore,
+  getCityOwners
 };

@@ -13,10 +13,6 @@ const paymentRoutes = require('./router/PaymentRouter');
 const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
 const addtocartRouter = require('./router/CartRouter');
-// Get City owners
-const cityOwnersRouter = require('./router/GetCityownerRouter');
-//Find Store
-const storeRoutes = require('./router/StoreRoute');
 
 
 const app = express();
@@ -76,27 +72,12 @@ app.use('/api/orders', orderRoutes);
 
 app.use('/api/addtocart', addtocartRouter);
 
-// Get cityowners
-app.use('/api', cityOwnersRouter);
-
 //Admin API
 
 //Add Delivery Person and Get locatio and for admin and user.
 
 app.use('/Admin',require('./router/AdminRouter'))
-app.use('/Admin',require('./router/AdminRouter'))
 
-
-
-
-
-//CityOwner
-
-app.use('/citystore',require('./router/CityStoreRouter'))
-
-
-
-app.use('/api/stores', storeRoutes);
 app.use('/Adminstore/delivery', DelPersonRouter);
 
 server.listen(PORT, () => {

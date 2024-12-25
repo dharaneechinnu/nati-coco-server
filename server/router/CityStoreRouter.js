@@ -7,7 +7,7 @@ const {CityStoreLogin,addMenuItem,updateMenuItem,deleteMenuItem} = require('../C
 router.post('/Login',CityStoreLogin);
 //cityStore Add Menu Item Router
 router.post('/Addmenu',addMenuItem);
-//cityStore Update Menu Item Router
+//cityStore Update Menu Item Routera
 router.put('/Updatemenu/:id',updateMenuItem);
 //cityStore Delete Menu Item Router
 router.delete('/Deletemenu/:id',deleteMenuItem);

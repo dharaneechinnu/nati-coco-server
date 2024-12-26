@@ -1,5 +1,5 @@
 const Order = require("../../models/Ordermodels");
-const Store = require('../../models/Ordermodels');
+const Store = require('../../models/CityOwnerModel');
 const MenuModels = require('../../models/MenuModel');
 const geolib = require('geolib'); // Added missing geolib import
 

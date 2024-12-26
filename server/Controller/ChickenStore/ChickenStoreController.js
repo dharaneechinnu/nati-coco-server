@@ -1,6 +1,7 @@
 const CityStore = require('../../models/CityOwnerModel');
 const MenuModels = require('../../models/MenuModel');
 const DeliveryPerson = require("../../models/DeliveryModels");
+const Order = require('../../models/Ordermodels')
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt')
 
@@ -138,5 +139,17 @@ const addDeliveryPerson = async (req, res) => {
   }
 };
 
-module.exports = {CityStoreLogin,addMenuItem,updateMenuItem,deleteMenuItem,addDeliveryPerson};
+
+const getOrders = async (req, res) => {
+  try {
+    const {storeId}=req.body
+    const orders = await Order.find({storeId:storeId});
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports = {CityStoreLogin,addMenuItem,updateMenuItem,deleteMenuItem,addDeliveryPerson,getOrders};
 

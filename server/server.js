@@ -15,9 +15,6 @@ const DelPersonRouter = require('./router/DelPersonRoutes');
 const addtocartRouter = require('./router/CartRouter');
 
 
-//Find Store
-const storeRoutes = require('./router/StoreRoute');
-
 
 const app = express();
 const server = http.createServer(app);
@@ -65,12 +62,16 @@ io.on("connection", (socket) => {
 
 // API Routes.
 
+
+//user Router
+
+
 //Login and register
 app.use('/auth', authRoutes);
 
 app.use('/payment', paymentRoutes);
 
-
+app.use('/user',require('./router/OrderRouter'))
 
 
 
@@ -80,9 +81,6 @@ app.use('/payment', paymentRoutes);
 
 app.use('/api/addtocart', addtocartRouter);
 
-
-
-// Get cityowners
 
 
 
@@ -99,11 +97,9 @@ app.use('/Admin',require('./router/AdminRouter'))
 
 
 //CityOwner
-app.use('/citystore',require('./router/CityStoreRouter'))
+app.use('/citystore',require('./router/ChickenStoreRouter'))
 
 
-
-app.use('/api/stores', storeRoutes);
 app.use('/Adminstore/delivery', DelPersonRouter);
 
 server.listen(PORT, () => {

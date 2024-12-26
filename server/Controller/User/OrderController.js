@@ -31,6 +31,7 @@ const createOrder = async (req, res) => {
   try {
     const {
       userId,
+      storeId,
       items,
       amount,
       paymentStatus,
@@ -48,6 +49,7 @@ const createOrder = async (req, res) => {
 
     const newOrder = await Order.create({
       userId,
+      storeId,
       items,
       amount,
       orderId,
@@ -63,15 +65,7 @@ const createOrder = async (req, res) => {
   }
 };
 
-const getOrders = async (req, res) => {
-  try {
-    const orders = await Order.find();
-    res.status(200).json(orders);
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
+
 
 const findNearestStoreAndDisplay = async (req, res) => { // Added async
   try {
@@ -112,4 +106,4 @@ const findNearestStoreAndDisplay = async (req, res) => { // Added async
 };
 
 
-module.exports ={createOrder, getOrders ,findNearestStoreAndDisplay}
+module.exports ={createOrder,findNearestStoreAndDisplay}

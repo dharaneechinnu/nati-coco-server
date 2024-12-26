@@ -3,11 +3,7 @@ const CityAdmin = require('../../models/CityOwnerModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-<<<<<<< HEAD:server/Controller/AdminController.js
-const CityOwnerModels = require('../models/CityOwnerModel');
-=======
 const CityOwnerModels = require('../../models/CityOwnerModel');
->>>>>>> 5721e8a83444ef0f065ce1a7e3b542f69f2fb21c:server/Controller/Admin/AdminController.js
 
 //Admin Login
 const loginAdmin = async (req, res) => {
@@ -123,12 +119,9 @@ const AddChickenStore = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD:server/Controller/AdminController.js
 
 
 // Get all City Owners without the password field
-=======
->>>>>>> 5721e8a83444ef0f065ce1a7e3b542f69f2fb21c:server/Controller/Admin/AdminController.js
 const getCityOwners = async (req, res) => {
   try {
     // Fetch all city owners and exclude the 'password' field
@@ -148,15 +141,5 @@ const getCityOwners = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD:server/Controller/AdminController.js
 
-
-
-module.exports = {loginAdmin,AddCityStoreAdmin,getCityOwners};
-=======
-module.exports = {
-  loginAdmin,
-  AddChickenStore,
-  getCityOwners
-};
->>>>>>> 5721e8a83444ef0f065ce1a7e3b542f69f2fb21c:server/Controller/Admin/AdminController.js
+module.exports = {loginAdmin,AddChickenStore,getCityOwners};

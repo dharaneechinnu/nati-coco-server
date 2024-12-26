@@ -75,7 +75,7 @@ app.use('/payment', paymentRoutes);
 app.use('/user',require('./router/OrderRouter'))
 
 
-
+app.use('/userapi',require('./router/UserRouter'))
 
 // //Order list get post And Pending Order.
 // app.use('/api/orders', orderRoutes);

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const {findNearestStoreAndDisplay} =  require("../Controller/User/OrderController");
+const {findNearestStoreAndDisplayMenu} =  require("../Controller/User/OrderController");
 
-router.get('/nearest', findNearestStoreAndDisplay);
+router.get('/nearest', findNearestStoreAndDisplayMenu);
 
 module.exports = router;

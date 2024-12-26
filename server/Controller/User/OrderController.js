@@ -66,7 +66,7 @@ const createOrder = async (req, res) => {
 
 
 
-const findNearestStoreAndDisplay = async (req, res) => {
+const findNearestStoreAndDisplayMenu = async (req, res) => {
   try {
     const { latitude, longitude } = req.query;
 
@@ -81,63 +81,80 @@ const findNearestStoreAndDisplay = async (req, res) => {
     }
 
     const userLocation = { latitude: lat, longitude: lon };
-
-    // Fetch all stores from the database
     const allStores = await Store.find();
-    console.log(allStores)
-    if (!allStores.length) {
+    if (!allStores || !allStores.length) {
       return res.status(404).json({ message: 'No stores found' });
     }
 
-    // Filter valid stores with proper latitude and longitude
     const validStores = allStores.filter(store => 
-      store.latitude !== undefined && 
-      store.longitude !== undefined
+      store.locations?.latitude !== undefined && 
+      store.locations?.longitude !== undefined
     );
 
     if (!validStores.length) {
       return res.status(404).json({ message: 'No valid stores found' });
     }
 
-    // Find the nearest store
-    const nearestStore = validStores.reduce((closest, store) => {
-      const storeLocation = { latitude: store.latitude, longitude: store.longitude };
+    const storesWithinRange = validStores.filter(store => {
+      const storeLocation = { 
+        latitude: store.locations.latitude, 
+        longitude: store.locations.longitude 
+      };
+      const distanceToUser = geolib.getDistance(userLocation, storeLocation);
+
+      return distanceToUser <= 10000; 
+    });
+
+    if (!storesWithinRange.length) {
+      return res.status(404).json({ message: 'No nearby stores within 10 km found' });
+    }
+
+    
+    const nearestStore = storesWithinRange.reduce((closest, store) => {
+      const storeLocation = { 
+        latitude: store.locations.latitude, 
+        longitude: store.locations.longitude 
+      };
       const distanceToUser = geolib.getDistance(userLocation, storeLocation);
 
       if (!closest || distanceToUser < closest.distance) {
-        return { ...store.toObject(), distance: distanceToUser };
+        return { id: store._id, distance: distanceToUser };
       }
       return closest;
     }, null);
 
-    // Fetch the store menu
-    const storeMenu = await MenuModels.find({ 
-      storeId: nearestStore._id, 
-      availability: true 
+    if (!nearestStore) {
+      return res.status(404).json({ message: 'Unable to find a nearest store' });
+    }
+
+    console.log(nearestStore.id);
+
+    const storeMenu = await MenuModels.find({
+      storeId: nearestStore.id,
+      availability: true
     });
 
+    if (!storeMenu.length) {
+      return res.status(404).json({ message: 'No menu items available at the nearest store' });
+    }
+
     res.json({
-      message: `The nearest store is ${nearestStore.name}`,
-      store: {
-        name: nearestStore.name,
-        address: nearestStore.address,
-        phone: nearestStore.phone,
-        distance: `${(nearestStore.distance / 1000).toFixed(2)} km`,
-        coordinates: {
-          latitude: nearestStore.latitude,
-          longitude: nearestStore.longitude
-        }
-      },
+      message: `Nearest store menu retrieved successfully`,
+      nearestStoreId: nearestStore.id,
       menu: storeMenu
     });
   } catch (error) {
-    console.error("Error finding nearest store:", error);
+    console.error("Error finding nearest store and its menu:", error);
     res.status(500).json({ 
-      error: 'An error occurred while finding the nearest store and its menu', 
+      error: 'An error occurred while processing your request', 
       details: error.message 
     });
   }
 };
 
 
-module.exports ={createOrder,findNearestStoreAndDisplay}
+
+
+
+
+module.exports ={createOrder,findNearestStoreAndDisplayMenu}

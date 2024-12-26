@@ -13,6 +13,7 @@ const paymentRoutes = require('./router/PaymentRouter');
 const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
 const addtocartRouter = require('./router/CartRouter');
+const userRoute = require('./router/UserRouter');
 
 
 const app = express();
@@ -72,7 +73,8 @@ app.use('/api/orders', orderRoutes);
 
 app.use('/api/addtocart', addtocartRouter);
 
-//Admin API
+app.use('/store', userRoute);
+
 
 //Add Delivery Person and Get locatio and for admin and user.
 

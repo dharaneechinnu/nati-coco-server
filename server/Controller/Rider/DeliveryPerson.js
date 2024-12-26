@@ -3,10 +3,6 @@ const mongoose = require('mongoose')
 const Order = require("../../models/Ordermodels");
 const geolib = require("geolib");
 
-
-//move to ChickenStore
-
-
 // Find and assign the nearest delivery person
 const findNearestDeliveryPerson = async (req, res) => {
   const { latitude, longitude, orderId } = req.body;

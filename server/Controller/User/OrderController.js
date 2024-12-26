@@ -101,7 +101,7 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
         longitude: store.locations.longitude 
       };
       const distanceToUser = geolib.getDistance(userLocation, storeLocation);
-
+        //Change based on needs from client
       return distanceToUser <= 10000; 
     });
 

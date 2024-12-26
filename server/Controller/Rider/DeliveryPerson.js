@@ -4,9 +4,6 @@ const Order = require("../../models/Ordermodels");
 const geolib = require("geolib");
 
 
-//move to ChickenStore
-
-
 // Find and assign the nearest delivery person
 const findNearestDeliveryPerson = async (req, res) => {
   const { latitude, longitude, orderId } = req.body;
@@ -134,5 +131,86 @@ const getDeliveryPersonLocation = async (req, res) => {
   }
 };
 
+// Update Delivery Status
+const updateDeliveryStatus = async (req, res) => {
+  const { deliveryPersonId, orderId, status } = req.body;
 
-module.exports={updateLocation,getDeliveryPersonLocation,findNearestDeliveryPerson}
+  try {
+    // Validate input
+    if (!deliveryPersonId || !orderId || !status) {
+      return res.status(400).json({ message: "All fields are required: deliveryPersonId, orderId, and status." });
+    }
+
+    // Validate status
+    const validStatuses = ["Pending", "Assigned", "Picked Up", "On the Way", "Delivered"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status value." });
+    }
+
+    // Find the order
+    const order = await Order.findOne({ orderId });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    // Check if the delivery person is assigned to the order
+    if (String(order.deliveryPersonId) !== String(deliveryPersonId)) {
+      return res.status(403).json({ message: "You are not assigned to this order." });
+    }
+
+    // Update the order status
+    order.status = status;
+    await order.save();
+
+    res.status(200).json({
+      message: "Order status updated successfully.",
+      order,
+    });
+  } catch (error) {
+    console.error("Error updating delivery status:", error);
+    res.status(500).json({ message: "Internal Server Error." });
+  }
+};
+
+// Fetch order history for delivered orders
+const getOrderHistory = async (req, res) => {
+  const { userId } = req.params; // Assuming userId is passed in the request parameters
+
+  try {
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required!" });
+    }
+
+    // Find orders with status "Delivered" for the specified user
+    const deliveredOrders = await Order.find({ 
+      userId, 
+      status: "Delivered" 
+    }).select("orderId items amount deliveryPersonId status createdAt updatedAt");
+
+    if (deliveredOrders.length === 0) {
+      return res.status(404).json({ message: "No delivered orders found!" });
+    }
+
+    // Map the orders to return in the required format
+    const orderHistory = deliveredOrders.map(order => ({
+      orderId: order.orderId,
+      items: order.items,
+      amount: order.amount,
+      deliveryPersonId: order.deliveryPersonId,
+      status: order.status,
+      orderDate: order.createdAt,
+      deliveredDate: order.updatedAt,
+    }));
+
+    res.status(200).json({
+      message: "Order history fetched successfully.",
+      orderHistory,
+    });
+  } catch (error) {
+    console.error("Error fetching order history:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+module.exports={updateLocation,getDeliveryPersonLocation,findNearestDeliveryPerson, updateDeliveryStatus, getOrderHistory}

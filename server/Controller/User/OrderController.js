@@ -1,4 +1,7 @@
 const Order = require("../../models/Ordermodels");
+const Store = require('../../models/CityOwnerModel');
+const MenuModels = require('../../models/MenuModel');
+const geolib = require('geolib'); // Added missing geolib import
 
 const generateUniqueOrderId = async () => {
   const maxAttempts = 10;
@@ -7,11 +10,9 @@ const generateUniqueOrderId = async () => {
   let attempts = 0;
 
   do {
-    
     const randomNum = Math.floor(Math.random() * 90000) + 10000; 
     orderId = `ORD#${randomNum}`;
 
-  
     const existingOrder = await Order.findOne({ orderId });
     if (!existingOrder) {
       isUnique = true;
@@ -39,12 +40,10 @@ const createOrder = async (req, res) => {
       location,
     } = req.body;
 
- 
     if (!userId || !amount || !paymentStatus) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    
     const orderId = await generateUniqueOrderId();
 
     const newOrder = await Order.create({
@@ -67,41 +66,76 @@ const createOrder = async (req, res) => {
 
 
 
-const findNearestStoreAndDisplay = async (req, res) => { // Added async
+const findNearestStoreAndDisplay = async (req, res) => {
   try {
     const { latitude, longitude } = req.query;
-    // Validate input
+
     if (!latitude || !longitude) {
       return res.status(400).json({ error: 'Latitude and longitude are required' });
     }
 
-    const userLocation = { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
+    const lat = parseFloat(latitude);
+    const lon = parseFloat(longitude);
+    if (isNaN(lat) || isNaN(lon)) {
+      return res.status(400).json({ error: 'Invalid latitude or longitude' });
+    }
 
-    // Get all stores from database
-    const allStores = await Store.find(); // Added: Get stores from database
+    const userLocation = { latitude: lat, longitude: lon };
 
+    // Fetch all stores from the database
+    const allStores = await Store.find();
+    console.log(allStores)
     if (!allStores.length) {
       return res.status(404).json({ message: 'No stores found' });
     }
 
+    // Filter valid stores with proper latitude and longitude
+    const validStores = allStores.filter(store => 
+      store.latitude !== undefined && 
+      store.longitude !== undefined
+    );
+
+    if (!validStores.length) {
+      return res.status(404).json({ message: 'No valid stores found' });
+    }
+
     // Find the nearest store
-    const nearestStore = allStores.reduce((closest, store) => {
-      const storeLocation = {
-        latitude: store.latitude,
-        longitude: store.longitude
-      };
+    const nearestStore = validStores.reduce((closest, store) => {
+      const storeLocation = { latitude: store.latitude, longitude: store.longitude };
       const distanceToUser = geolib.getDistance(userLocation, storeLocation);
-      return !closest || distanceToUser < closest.distance
-        ? { ...store.toObject(), distance: distanceToUser }
-        : closest;
+
+      if (!closest || distanceToUser < closest.distance) {
+        return { ...store.toObject(), distance: distanceToUser };
+      }
+      return closest;
     }, null);
+
+    // Fetch the store menu
+    const storeMenu = await MenuModels.find({ 
+      storeId: nearestStore._id, 
+      availability: true 
+    });
 
     res.json({
       message: `The nearest store is ${nearestStore.name}`,
-      store: nearestStore,
+      store: {
+        name: nearestStore.name,
+        address: nearestStore.address,
+        phone: nearestStore.phone,
+        distance: `${(nearestStore.distance / 1000).toFixed(2)} km`,
+        coordinates: {
+          latitude: nearestStore.latitude,
+          longitude: nearestStore.longitude
+        }
+      },
+      menu: storeMenu
     });
   } catch (error) {
-    res.status(500).json({ error: 'An error occurred while finding nearest store', details: error.message });
+    console.error("Error finding nearest store:", error);
+    res.status(500).json({ 
+      error: 'An error occurred while finding the nearest store and its menu', 
+      details: error.message 
+    });
   }
 };
 

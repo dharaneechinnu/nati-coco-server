@@ -89,7 +89,6 @@ app.use('/api/addtocart', addtocartRouter);
 
 //Admin API
 
-//Add Delivery Person and Get locatio and for admin and user.
 
 app.use('/Admin',require('./router/AdminRouter'))
 
@@ -100,6 +99,7 @@ app.use('/Admin',require('./router/AdminRouter'))
 //CityOwner
 app.use('/citystore',require('./router/ChickenStoreRouter'))
 
+//Add Delivery Person and Get locatio and for admin and user.
 
 app.use('/Adminstore/delivery', DelPersonRouter);
 

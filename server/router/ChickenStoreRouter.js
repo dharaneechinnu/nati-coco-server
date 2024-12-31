@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {CityStoreLogin,addMenuItem,updateMenuItem,deleteMenuItem,getOrders} = require('../Controller/ChickenStore/ChickenStoreController')
+const {CityStoreLogin,addMenuItem,updateMenuItem,deleteMenuItem,getOrders, getMenuItems} = require('../Controller/ChickenStore/ChickenStoreController')
  
  
 //cityStore Login Router
@@ -12,7 +12,7 @@ router.put('/Updatemenu/:id',updateMenuItem);
 //cityStore Delete Menu Item Router
 router.delete('/Deletemenu/:id',deleteMenuItem);
 
-
+router.get('/getmenu',getMenuItems)
 //cityStore GetOrder
 router.get("/getorder", getOrders);
 

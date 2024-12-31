@@ -73,33 +73,37 @@ const addMenuItem = async (req, res) => {
       return res.status(400).json({ message: 'File upload failed', error: err.message });
     }
 
-    console.log('File uploaded:', req.file);  
+    console.log('File uploaded:', req.file);  // Corrected this line
+    
     const { storeId, itemName, description, price } = req.body;
 
+    // Ensure that an image is uploaded
     if (!req.file) {
       return res.status(400).json({ message: 'Image file is required' });
     }
 
     try {
+      // Create the new menu item in the database
       const menuItem = await MenuModels.create({
         storeId,
         itemName,
         description,
         price,
-        image: `/ImageStore/${req.file.filename}`, 
+        image: `/ImageStore/${req.file.filename}`,  // Image URL with filename
       });
 
-      console.log('Menu item added:', menuItem);  
+      console.log('Menu item added:', menuItem);  // Corrected this line
       res.status(201).json({
         message: 'Menu item added successfully',
         menuItem,
       });
     } catch (error) {
-      console.error('Error adding menu item:', error);
+      console.error('Error adding menu item:', error);  // Corrected this line
       res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   });
 };
+
 
 
 // Update Menu Item by CityStore with Image Upload

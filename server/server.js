@@ -69,18 +69,13 @@ io.on("connection", (socket) => {
 
 //Login and register
 app.use('/auth', authRoutes);
-
 app.use('/payment', paymentRoutes);
-
 app.use('/user',require('./router/OrderRouter'))
-
-
 app.use('/userapi',require('./router/UserRouter'))
-
+app.use('/api/addtocart', addtocartRouter);
 // //Order list get post And Pending Order.
 // app.use('/api/orders', orderRoutes);
 
-app.use('/api/addtocart', addtocartRouter);
 
 
 

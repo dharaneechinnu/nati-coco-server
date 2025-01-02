@@ -66,47 +66,43 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-// Add Menu Item with Image Upload
 const addMenuItem = async (req, res) => {
   upload.single('image')(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ message: 'File upload failed', error: err.message });
     }
 
-    console.log('File uploaded:', req.file);  // Corrected this line
-    
-    const { storeId, itemName, description, price } = req.body;
+    const { storeId, category, subCategory, itemName, description, price, availability } = req.body;
 
-    // Ensure that an image is uploaded
+    // Ensure an image is uploaded
     if (!req.file) {
       return res.status(400).json({ message: 'Image file is required' });
     }
 
     try {
-      // Create the new menu item in the database
       const menuItem = await MenuModels.create({
         storeId,
+        category,
+        subCategory,
         itemName,
         description,
         price,
-        image: `/ImageStore/${req.file.filename}`,  // Image URL with filename
+        availability,
+        image: `/ImageStore/${req.file.filename}`, // Save image path
       });
 
-      console.log('Menu item added:', menuItem);  // Corrected this line
       res.status(201).json({
         message: 'Menu item added successfully',
         menuItem,
       });
     } catch (error) {
-      console.error('Error adding menu item:', error);  // Corrected this line
+      console.error('Error adding menu item:', error);
       res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   });
 };
 
-
-
-// Update Menu Item by CityStore with Image Upload
+// Update Menu Item by ID with Image Upload
 const updateMenuItem = async (req, res) => {
   upload.single('image')(req, res, async (err) => {
     if (err) {
@@ -114,15 +110,22 @@ const updateMenuItem = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { itemName, description, price, availability } = req.body;
+    const { category, subCategory, itemName, description, price, availability } = req.body;
     const image = req.file ? `/ImageStore/${req.file.filename}` : null;
 
     try {
-      const updatedMenuItem = await MenuModels.findByIdAndUpdate(
-        id,
-        { itemName, description, price, image, availability },
-        { new: true }
-      );
+      const updateData = {
+        category,
+        subCategory,
+        itemName,
+        description,
+        price,
+        availability,
+      };
+
+      if (image) updateData.image = image;
+
+      const updatedMenuItem = await MenuModels.findByIdAndUpdate(id, updateData, { new: true });
 
       if (!updatedMenuItem) {
         return res.status(404).json({ message: 'Menu item not found' });
@@ -139,7 +142,7 @@ const updateMenuItem = async (req, res) => {
   });
 };
 
-// Delete Menu Item by CityStore
+// Delete Menu Item by ID
 const deleteMenuItem = async (req, res) => {
   const { id } = req.params;
 
@@ -157,20 +160,24 @@ const deleteMenuItem = async (req, res) => {
   }
 };
 
-// Get Menu Items
+// Get Menu Items by Category and Subcategory
 const getMenuItems = async (req, res) => {
-  try {
-    const menuItems = await MenuModels.find();
+  const { category, subCategory } = req.query;
 
-    // Check if menu items are found
+  try {
+    const query = {};
+    if (category) query.category = category;
+    if (subCategory) query.subCategory = subCategory;
+
+    const menuItems = await MenuModels.find(query);
+
     if (!menuItems || menuItems.length === 0) {
-      return res.status(404).json({ message: 'No menu items found' });
+      return res.status(404).json({ message: 'No menu items found for the specified category and subcategory' });
     }
 
-    // Respond with all menu items, including image URLs
     res.status(200).json(menuItems);
   } catch (error) {
-    console.error('Error fetching menu items:', error);
+    console.error('Error fetching menu items by category:', error);
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };

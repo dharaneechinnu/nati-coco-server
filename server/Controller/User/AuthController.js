@@ -273,7 +273,7 @@ const respassword = async (req, res) => {
 const getUsers = async (req, res) => {
     try {
         const users = await usermodel.find({});
-        res.status(200).json(users);
+        res.status(200).json({ users: users }); // Wrapping users in an object
     } catch (error) {
         res.status(500).json({ message: "Error fetching users", error: error.message });
     }

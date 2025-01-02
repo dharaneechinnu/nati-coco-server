@@ -64,7 +64,102 @@ const createOrder = async (req, res) => {
   }
 };
 
+const getOrderAnalytics = async (req, res) => {
+    try {
+        const { timeFilter = 'WEEK' } = req.query;
+        const now = new Date();
+        const filterDate = new Date();
 
+        switch (timeFilter) {
+            case 'WEEK':
+                filterDate.setDate(now.getDate() - 7);
+                break;
+            case 'MONTH':
+                filterDate.setMonth(now.getMonth() - 1);
+                break;
+            case 'YEAR':
+                filterDate.setFullYear(now.getFullYear() - 1);
+                break;
+            default:
+                filterDate.setDate(now.getDate() - 7);
+        }
+
+        // Get filtered orders
+        const orders = await Order.find({
+            createdAt: { $gte: filterDate }
+        }).populate('storeId', 'name');
+
+        // Calculate total stats
+        const totalOrders = orders.length;
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+        // Calculate daily data
+        const dailyData = {};
+        orders.forEach(order => {
+            const date = order.createdAt.toLocaleDateString();
+            if (!dailyData[date]) {
+                dailyData[date] = {
+                    revenue: 0,
+                    orders: 0,
+                    avgOrderValue: 0
+                };
+            }
+            dailyData[date].revenue += order.total;
+            dailyData[date].orders += 1;
+        });
+
+        // Calculate store performance
+        const storeStats = {};
+        orders.forEach(order => {
+            if (!storeStats[order.storeId._id]) {
+                storeStats[order.storeId._id] = {
+                    id: order.storeId._id,
+                    name: order.storeId.name,
+                    orders: 0,
+                    revenue: 0,
+                    ratings: []
+                };
+            }
+            storeStats[order.storeId._id].orders += 1;
+            storeStats[order.storeId._id].revenue += order.total;
+            if (order.rating) {
+                storeStats[order.storeId._id].ratings.push(order.rating);
+            }
+        });
+
+        // Process store stats
+        const topStores = Object.values(storeStats)
+            .map(store => ({
+                ...store,
+                rating: store.ratings.length > 0 
+                    ? store.ratings.reduce((a, b) => a + b) / store.ratings.length 
+                    : 0
+            }))
+            .sort((a, b) => b.orders - a.orders);
+
+        // Calculate percentage changes (mock data for now)
+        const percentageChanges = {
+            orders: 12.5,
+            revenue: 8.3,
+            avgOrderValue: -2.1
+        };
+
+        res.status(200).json({
+            totalStats: {
+                orders: 200,
+                revenue: totalRevenue,
+                avgOrderValue,
+                percentageChanges
+            },
+            dailyData: Object.values(dailyData),
+            topStores: topStores.slice(0, 5)
+        });
+    } catch (error) {
+        console.error('Error in getOrderAnalytics:', error);
+        res.status(500).json({ message: "Error fetching order analytics", error: error.message });
+    }
+};
 
 const findNearestStoreAndDisplayMenu = async (req, res) => {
   try {
@@ -152,9 +247,8 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
   }
 };
 
-
-
-
-
-
-module.exports ={createOrder,findNearestStoreAndDisplayMenu}
+module.exports = {
+    createOrder,
+    findNearestStoreAndDisplayMenu,
+    getOrderAnalytics
+};

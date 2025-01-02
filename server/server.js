@@ -17,6 +17,7 @@ const userRoute = require('./router/UserRouter');
 
 
 
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -57,7 +58,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
-});
+ });
 
 
 
@@ -73,10 +74,10 @@ app.use('/payment', paymentRoutes);
 app.use('/user',require('./router/OrderRouter'))
 app.use('/userapi',require('./router/UserRouter'))
 app.use('/api/addtocart', addtocartRouter);
-// //Order list get post And Pending Order.
-// app.use('/api/orders', orderRoutes);
-
-
+//Order list get post And Pending Order.
+app.use('/api/orders', orderRoutes);
+app.use('/api/cart', addtocartRouter);
+app.use('/api/user', userRoute);
 
 
 

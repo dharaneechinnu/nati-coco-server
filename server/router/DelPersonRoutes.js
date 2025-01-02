@@ -1,10 +1,11 @@
 const express = require("express");
 const { updateLocation,getDeliveryPersonLocation,findNearestDeliveryPerson, updateDeliveryStatus, getOrderHistory } = require("../Controller/Rider/DeliveryPerson");
-const { addDeliveryPerson } = require("../Controller/ChickenStore/ChickenStoreController");
+const { addDeliveryPerson, getDeliveryPersons } = require("../Controller/ChickenStore/ChickenStoreController");
 
 const router = express.Router();
 
 router.post('/add', addDeliveryPerson);
+router.get('/getDeliveryPerson',getDeliveryPersons);
 
 router.post("/update-location", updateLocation);
 

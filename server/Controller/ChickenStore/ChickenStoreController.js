@@ -201,6 +201,27 @@ const addDeliveryPerson = async (req, res) => {
   }
 };
 
+// Get Delivery Persons
+const getDeliveryPersons = async (req, res) => {
+  try {
+    const deliveryPersons = await DeliveryPerson.find();
+
+    if (!deliveryPersons.length) {
+      return res.status(404).json({ 
+        message: 'No delivery persons found' 
+      });
+    }
+
+    res.status(200).json({
+      message: 'Delivery persons retrieved successfully',
+      deliveryPersons
+    });
+  } catch (error) {
+    console.error('Error retrieving delivery persons:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 // Get Orders
 const getOrders = async (req, res) => {
   try {
@@ -220,5 +241,6 @@ module.exports = {
   deleteMenuItem, 
   getMenuItems, 
   addDeliveryPerson, 
+  getDeliveryPersons, 
   getOrders 
 };

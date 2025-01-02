@@ -152,13 +152,6 @@ const getOtp = async (req, res) => {
     }
 };
 
-
-
-
-
-
-
-
 const Verifyotp = async (req, res) => {
     try {
         const { phoneNumber, otp } = req.body;

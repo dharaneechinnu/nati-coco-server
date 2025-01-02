@@ -6,9 +6,16 @@ const MenuSchema = new mongoose.Schema({
     ref: 'citystore', 
     required: true,
   },
-  itemName: {
-    type: String,
+  category: {
+    type: String, 
     required: true,
+  },
+  subCategory: {
+    type: String, 
+
+  },
+  itemName: {
+    type: String, 
   },
   description: {
     type: String,
@@ -24,9 +31,9 @@ const MenuSchema = new mongoose.Schema({
   availability: {
     type: Boolean,
     default: true,
-  }
+  },
 });
 
-const MenuModels = mongoose.model('Menu', MenuSchema);
+const MenuModel = mongoose.model('Menu', MenuSchema);
 
-module.exports =MenuModels
+module.exports = MenuModel;

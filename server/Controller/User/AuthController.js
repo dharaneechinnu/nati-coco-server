@@ -3,6 +3,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const PASS = process.env.PASS;
 const nodemailer = require('nodemailer');
+const textflow = require("textflow.js");
+const { isValidPhoneNumber, parsePhoneNumber } = require('libphonenumber-js');
+
+textflow.useKey('JvlPkiAbXej0ZfoTibTeivyehdibSWaRHyEE6VeeNQbmnYmGqcI1y4HtdFy1x6Iv'); // Replace with your actual API key
 
 const login = async (req, res) => {
     try {
@@ -19,7 +23,6 @@ const login = async (req, res) => {
 
         const isValidate = await bcrypt.compare(password, user.password);
         if (isValidate) {
-            
             const { password, ...userWithoutPassword } = user.toObject();
 
             const accessToken = jwt.sign(
@@ -31,7 +34,7 @@ const login = async (req, res) => {
             res.status(200).json({
                 accessToken,
                 user: {
-                    userId:user._id,
+                    userId: user._id,
                     name: user.name,
                     mobileno: user.mobileno,
                     email: user.email,
@@ -48,9 +51,9 @@ const login = async (req, res) => {
 
 const register = async (req, res) => {
     try {
-        const { name, email, password,mobileno } = req.body;
+        const { name, email, password, mobileno } = req.body;
 
-        if (!name || !email || !password ||!mobileno) {
+        if (!name || !email || !password || !mobileno) {
             return res.status(400).json({ message: "Enter all the fields" });
         }
 
@@ -58,11 +61,10 @@ const register = async (req, res) => {
         if (user) {
             return res.status(400).json({ message: "User already exists" });
         }
-       
 
         const hashpwd = await bcrypt.hash(password, 10);
 
-        await usermodel.create({ name, password: hashpwd, email,mobileno });
+        await usermodel.create({ name, password: hashpwd, email, mobileno });
 
         res.status(200).json({ message: "User registered successfully" });
 
@@ -71,31 +73,137 @@ const register = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
-  
 
-const gtpOtps = async (req, res) => {
-    function generateOTP() {
-        return Math.floor(1000 + Math.random() * 9000).toString();
-    }
-    
 
+const getOtp = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { phoneNumber } = req.body;
 
-        if (!email) {
-            return res.status(400).json({ message: "Email is required" });
+        // Check if the phone number is provided
+        if (!phoneNumber) {
+            return res.status(400).json({ message: "Phone number is required" });
         }
 
-        const user = await usermodel.findOne({ email });
+        // Validate and format the phone number using libphonenumber
+        let parsedPhoneNumber;
+        try {
+            parsedPhoneNumber = parsePhoneNumber(phoneNumber); // Parse the phone number
+        } catch (error) {
+            return res.status(400).json({ message: "Invalid phone number format" });
+        }
+
+        // If the phone number is not valid
+        if (!parsedPhoneNumber.isValid()) {
+            return res.status(400).json({ message: "Invalid phone number format" });
+        }
+
+        // Format the phone number to international format
+        const formattedPhoneNumber = parsedPhoneNumber.formatInternational(); // e.g., "+917397475123"
+        const normalizedPhoneNumber = formattedPhoneNumber.replace(/\D/g, ''); // Remove non-numeric characters
+        const finalPhoneNumber = `+${normalizedPhoneNumber}`; // Ensure it starts with '+'
+
+        // Check if the user exists in the database with the normalized number
+        let user = await usermodel.findOne({ mobileno: finalPhoneNumber });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Configure options for TextFlow's OTP generation
+        const verificationOptions = {
+            sender: 'MyCompany',                       // Replace with your sender ID or phone number
+            message: `Your verification code is {otp}`,  // TextFlow replaces {otp} with the actual OTP
+            expires: 3600                              // OTP expires in 1 hour (3600 seconds)
+        };
+
+        textflow.sendVerificationSMS(finalPhoneNumber, verificationOptions, async (error, data) => {
+            // Check if `error` is a success response instead of an actual error
+            const response = error || data; // Use `error` if it's not null, else `data`
+            
+            if (response && response.ok && response.status === 200) {
+                const otp = response.data.verification_code; // Extract OTP from the response
+                console.log("OTP generated:", otp);
+        
+                // Save TextFlow's OTP and expiration time in the database
+                user.otpToken = otp;
+                user.otpExpire = Date.now() + 3600000; // 1 hour from now
+                await user.save();
+        
+                console.log("OTP saved to database:", user);
+                return res.status(200).json({
+                    message: "OTP sent successfully to your phone",
+                    otpDetails: {
+                        otp, // For debugging purposes, you can omit this in production
+                        expiresIn: verificationOptions.expires
+                    }
+                });
+            } else {
+                console.error("Failed to send OTP:", response);
+                return res.status(500).json({
+                    message: "Failed to send OTP via SMS",
+                    errorDetails: response
+                });
+            }
+        });
+        
+
+    } catch (error) {
+        console.error("Error generating OTP:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+const Verifyotp = async (req, res) => {
+    try {
+        const { phoneNumber, otp } = req.body;
+
+        if (!phoneNumber || !otp) {
+            return res.status(400).json({ message: "Phone number and OTP are required" });
+        }
+
+        const user = await usermodel.findOne({ mobileno: phoneNumber });
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const otp = generateOTP();
+        if (user.otpExpire < Date.now()) {
+            return res.status(400).json({ message: "OTP has expired" });
+        }
 
-        user.otpToken = otp;
-        user.otpExpire = Date.now() + 3600000; 
+        if (user.otpToken === otp) {
+            // Clear OTP data and mark user as verified
+            user.otpToken = null;
+            user.otpExpire = null;
+            user.verified = true;
+            await user.save();
+
+            return res.status(200).json({ message: "OTP verified successfully" });
+        } else {
+            return res.status(400).json({ message: "Invalid OTP" });
+        }
+    } catch (error) {
+        console.error("Error verifying OTP:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    const { email } = req.body;
+
+    function generateOTP() {
+        return Math.floor(1000 + Math.random() * 9000).toString();
+    }
+
+    try {
+        const user = await usermodel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const token = generateOTP();
+
+        user.resetPwdToken = token;
+        user.resetPwdExpire = Date.now() + 3600000; // Expire after 1 hour
 
         await user.save();
 
@@ -109,134 +217,25 @@ const gtpOtps = async (req, res) => {
 
         const mailOptions = {
             from: "dharaneedharanchinnusamy@gmail.com",
-            to: email,
-            subject: "Email Verification OTP",
-            html: `
-              <div style="color: black; font-size: 20px;">
-                <p>Hello,</p>
-                <p><strong>Your OTP for email verification is:</strong></p>
-                <h1 style="color: black;">${otp}</h1>
-                <p>Please use this OTP to verify your email.</p>
-                <p>Best regards,<br/>Your App Team</p>
-              </div>
-            `
-        };
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error("Error sending verification OTP email:", error);
-                return res.status(500).json({ message: "Failed to send verification OTP email" });
-            }
-            console.log("Verification OTP email sent:", info.response,otp);
-            res.status(200).json({ message: "Verification OTP sent to email" });
-        });
-
-    } catch (error) {
-        console.error("Error generating OTP:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
-
-const Verifyotp = async (req, res) => {
-    try {
-        const { email, otp } = req.body;
-        console.log(`Received OTP: ${otp}`);
-
-        if (!email || !otp) {
-            return res.status(400).json({ message: "Email and OTP are required" });
-        }
-
-      
-        const user = await usermodel.findOne({ email });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-      
-        if (user.otpExpire < Date.now()) {
-            return res.status(400).json({ message: "OTP has expired" });
-        }
-
-       
-        if (user.otpToken === otp) {
-          
-            user.otpToken = null;
-            user.otpExpire = null;
-            user.verified = true; 
-
-            await user.save(); 
-
-            res.status(200).json({ message: "OTP verified successfully" });
-        } else {
-            return res.status(400).json({ message: "Invalid OTP" });
-        }
-    } catch (error) {
-        console.error("Error verifying OTP:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
-
-const resetPassword = async(req,res) =>{
-    const { email } = req.body;
-    function generateOTP() {
-        return Math.floor(1000 + Math.random() * 9000).toString();
-    }
-    
-
-
-    try {
-       
-        const user = await usermodel.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-     
-        const token = generateOTP();
-
-
-      
-        user.resetPwdToken = token;
-        user.resetPwdExpire = Date.now() + 3600000; 
-
-      
-        await user.save();
-
-       
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: "dharaneedharanchinnusamy@gmail.com",
-                pass: PASS
-            }
-        });
-
-        const mailOptions = {
-            from: "dharaneedharanchinnusamy@gmail.com", 
             to: user.email,
             subject: "Password Reset Request",
             text: `Hello ${user.name},\n\nYou requested to reset your password. Please use the following token to reset your password:\n\n${token}\n\nIf you didn't request this, please ignore this email.\n\nBest regards,\nYour App Team`
         };
 
-  
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.error("Error sending password reset email:", error);
                 return res.status(500).json({ message: "Failed to send password reset email" });
             }
-          
-            console.log("Password reset email sent:", info.response,token);
+
+            console.log("Password reset email sent:", info.response, token);
             res.status(200).json({ message: "Password reset email sent" });
         });
     } catch (error) {
         console.error("Error resetting password:", error);
         res.status(500).json({ message: "Internal server error" });
     }
-} 
-
+};
 
 const respassword = async (req, res) => {
     const { token, pwd } = req.body;
@@ -267,13 +266,8 @@ const respassword = async (req, res) => {
 
     } catch (error) {
         console.error("Error resetting password:", error);
-
-    
         res.status(500).json({ message: "Internal server error" });
     }
 };
 
-
-  
-
-module.exports ={login,register,gtpOtps,resetPassword,Verifyotp,respassword}
+module.exports = { login, register, getOtp, resetPassword, Verifyotp, respassword };

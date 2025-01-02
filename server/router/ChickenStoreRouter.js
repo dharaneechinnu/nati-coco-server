@@ -11,9 +11,9 @@ router.post('/Addmenu',addMenuItem);
 router.put('/Updatemenu/:id',updateMenuItem);
 //cityStore Delete Menu Item Router
 router.delete('/Deletemenu/:id',deleteMenuItem);
-
+//citystore GetMenu item Router
 router.get('/getmenu',getMenuItems)
-//cityStore GetOrder
+//cityStore GetOrder item Router
 router.get("/getorder", getOrders);
 
  

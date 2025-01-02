@@ -269,5 +269,14 @@ const respassword = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
- 
-module.exports = { login, register, getOtp, resetPassword, Verifyotp, respassword };
+
+const getUsers = async (req, res) => {
+    try {
+        const users = await usermodel.find({});
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching users", error: error.message });
+    }
+};
+
+module.exports = { login, register, getOtp, resetPassword, Verifyotp, respassword, getUsers };

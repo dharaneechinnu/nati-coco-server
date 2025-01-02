@@ -197,15 +197,14 @@ const resetPassword = async(req,res) =>{
      
         const token = generateOTP();
 
-
-      
+        // Save the token and expiration time to the user document
         user.resetPwdToken = token;
         user.resetPwdExpire = Date.now() + 3600000; 
 
-      
+        // Save the changes to the user document
         await user.save();
 
-       
+        // Create a transporter object to send the email
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
@@ -214,6 +213,7 @@ const resetPassword = async(req,res) =>{
             }
         });
 
+        // Define the email options
         const mailOptions = {
             from: "dharaneedharanchinnusamy@gmail.com", 
             to: user.email,
@@ -221,7 +221,7 @@ const resetPassword = async(req,res) =>{
             text: `Hello ${user.name},\n\nYou requested to reset your password. Please use the following token to reset your password:\n\n${token}\n\nIf you didn't request this, please ignore this email.\n\nBest regards,\nYour App Team`
         };
 
-  
+        // Send the email
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.error("Error sending password reset email:", error);
@@ -236,7 +236,6 @@ const resetPassword = async(req,res) =>{
         res.status(500).json({ message: "Internal server error" });
     }
 } 
-
 
 const respassword = async (req, res) => {
     const { token, pwd } = req.body;
@@ -273,7 +272,33 @@ const respassword = async (req, res) => {
     }
 };
 
+const getUsers = async (req, res) => {
+    try {
+        // Fetch all users and exclude sensitive fields
+        const users = await usermodel.find().select('-password -resetPwdToken -resetPwdExpire -otpToken -otpExpire');
+        
+        if (!users.length) {
+            return res.status(404).json({ 
+                message: 'No users found'
+            });
+        }
 
-  
+        res.status(200).json({
+            message: 'Users retrieved successfully',
+            users
+        });
+    } catch (error) {
+        console.error('Error retrieving users:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
-module.exports ={login,register,gtpOtps,resetPassword,Verifyotp,respassword}
+module.exports = {
+    login,
+    register,
+    gtpOtps,
+    resetPassword,
+    Verifyotp,
+    respassword,
+    getUsers
+}

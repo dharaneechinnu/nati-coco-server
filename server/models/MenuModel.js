@@ -32,6 +32,14 @@ const MenuSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  BestSeller:{
+    type:Boolean,
+    default:true,
+  },
+  newArrival:{
+    type:Boolean,
+    default:true,
+  }
 });
 
 const MenuModel = mongoose.model('Menu', MenuSchema);

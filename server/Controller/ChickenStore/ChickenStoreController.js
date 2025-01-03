@@ -160,19 +160,19 @@ const deleteMenuItem = async (req, res) => {
   }
 };
 
-// Get Menu Items by Category and Subcategory
-const getMenuItems = async (req, res) => {
-  const { category, subCategory } = req.query;
+// Get Menu Items by Category, Subcategory, and Store ID
+const getMenuItemsByCategory = async (req, res) => {
+  const { subCategory, storeId } = req.query;
 
   try {
     const query = {};
-    if (category) query.category = category;
     if (subCategory) query.subCategory = subCategory;
+    if (storeId) query.storeId = storeId;
 
     const menuItems = await MenuModels.find(query);
 
     if (!menuItems || menuItems.length === 0) {
-      return res.status(404).json({ message: 'No menu items found for the specified category and subcategory' });
+      return res.status(404).json({ message: 'No menu items found for the specified filters' });
     }
 
     res.status(200).json(menuItems);
@@ -182,6 +182,27 @@ const getMenuItems = async (req, res) => {
   }
 };
 
+
+// Get All Menu Items by Store ID
+const getMenuItems = async (req, res) => {
+  const { storeId } = req.query;
+
+  try {
+    const query = {};
+    if (storeId) query.storeId = storeId;
+
+    const menuItems = await MenuModels.find(query);
+
+    if (!menuItems || menuItems.length === 0) {
+      return res.status(404).json({ message: 'No menu items found for the specified store' });
+    }
+
+    res.status(200).json(menuItems);
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
 
 // Add Delivery Person
 const addDeliveryPerson = async (req, res) => {
@@ -249,5 +270,6 @@ module.exports = {
   getMenuItems, 
   addDeliveryPerson, 
   getDeliveryPersons, 
-  getOrders 
+  getOrders,
+  getMenuItemsByCategory 
 };

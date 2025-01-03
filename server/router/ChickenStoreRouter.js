@@ -12,8 +12,8 @@ router.put('/Updatemenu/:id',updateMenuItem);
 //cityStore Delete Menu Item Router
 router.delete('/Deletemenu/:id',deleteMenuItem);
 //citystore GetMenu item Router
-router.get('/getmenu',getMenuItems)
-router.get('/getallmenu',getMenuItemsByCategory)
+router.get('/getallmenu',getMenuItems)
+router.get('/getcarmenu',getMenuItemsByCategory)
 //cityStore GetOrder item Router
 router.get("/getorder", getOrders);
 

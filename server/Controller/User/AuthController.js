@@ -10,13 +10,13 @@ textflow.useKey('JvlPkiAbXej0ZfoTibTeivyehdibSWaRHyEE6VeeNQbmnYmGqcI1y4HtdFy1x6I
  
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { mobileno, password } = req.body;
  
-        if (!email || !password) {
+        if (!mobileno || !password) {
             return res.status(400).json({ message: "Enter all fields" });
         }
  
-        const user = await usermodel.findOne({ email });
+        const user = await usermodel.findOne({ mobileno });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -26,7 +26,7 @@ const login = async (req, res) => {
             const { password, ...userWithoutPassword } = user.toObject();
  
             const accessToken = jwt.sign(
-                { email: email, userId: user._id },
+                { mobileno: mobileno, userId: user._id },
                 process.env.ACCESS_TOKEN,
                 { expiresIn: '1d' }
             );

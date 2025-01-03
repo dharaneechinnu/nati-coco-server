@@ -80,7 +80,10 @@ app.use('/api/cart', addtocartRouter);
 app.use('/api/user', userRoute);
 
 
-
+app.get("/images/:id", (req, res) => {
+  const { id } = req.params;
+  res.sendFile(__dirname + `/ImageStore/${id}`);
+});
 
 
 //Admin API

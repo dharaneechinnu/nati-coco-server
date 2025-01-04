@@ -1,18 +1,40 @@
 const mongoose = require('mongoose');
 
-const paymentSchema = new mongoose.Schema({
-  stripe_payment_intent_id: String,
-  stripe_client_secret: String,
-  amount: Number,
-  status: {
-    type: String,
-    enum: ['pending', 'succeeded', 'failed'],
-    default: 'pending'
+const paymentSchema = new mongoose.Schema(
+  {
+    razorpay_order_id: {
+      type: String,
+      required: true,
+    },
+    razorpay_payment_id: {
+      type: String,
+      required: true,
+    },
+    razorpay_signature: {
+      type: String,
+      required: true,
+    },
+    amount: {
+      type: Number,
+     
+    },
+    currency: {
+      type: String,
+      default: "INR",
+    },
+    receipt: {
+      type: String,
+    },
+    status: {
+      type: String,
+      default: "pending", // Other possible values: "paid", "failed"
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  created_at: {
-    type: Date,
-    default: Date.now
-  }
-});
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('Payment', paymentSchema);

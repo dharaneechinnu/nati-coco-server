@@ -20,6 +20,7 @@ const createOrder = async (req, res) => {
         console.error("Error creating order:", error);
         return res.status(500).json({ message: "Something went wrong!" });
       }
+      console.log("order",order)
       res.status(200).json({ data: order });
     });
   } catch (error) {
@@ -39,13 +40,13 @@ const verifyPayment = async (req, res) => {
       .digest("hex");
 
     if (razorpay_signature === expectedSign) {
-      await PaymentSchema.create({
+   const result=   await PaymentSchema.create({
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,
         status:true,
       });
-
+console.log("result : ",result);
       return res.status(200).json({ message: "Payment verified successfully" });
     } else {
       return res.status(400).json({ message: "Invalid signature sent!" });

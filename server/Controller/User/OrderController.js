@@ -236,8 +236,13 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
     res.json({
       message: `Nearest store menu retrieved successfully`,
       nearestStoreId: nearestStore.id,
-      menu: storeMenu
+      menu: storeMenu.map(item => ({
+        ...item._doc,
+        image: `http://${req.headers.host}/ImageStore/${item.image}`, // Ensure correct path
+      })),
     });
+    
+    
   } catch (error) {
     console.error("Error finding nearest store and its menu:", error);
     res.status(500).json({ 

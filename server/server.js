@@ -9,7 +9,7 @@ const MONGODB_URL = process.env.MONGO_URL;
 
 //Routes
 const authRoutes = require('./router/AuthRouter');
-const paymentRoutes = require('./router/PaymentRouter');
+const paymentRoutes = require('./routes/payment');
 const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
 const addtocartRouter = require('./router/CartRouter');

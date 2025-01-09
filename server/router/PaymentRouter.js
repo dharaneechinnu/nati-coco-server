@@ -1,10 +1,10 @@
 const express = require("express");
-const { createUpiOrder, getPaymentStatus} = require("../Controller/User/PaymentController");
+const { createOrder, verifyPayment } = require("../Controller/User/PaymentController");
 
 const router = express.Router();
 
-router.post("/create-upi-order", createUpiOrder);
+router.post("/orders", createOrder);
 
-router.post("/status/:orderId", getPaymentStatus);
+router.post("/verify", verifyPayment);
 
 module.exports = router;

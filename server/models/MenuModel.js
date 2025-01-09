@@ -12,7 +12,6 @@ const MenuSchema = new mongoose.Schema({
   },
   subCategory: {
     type: String, 
-
   },
   itemName: {
     type: String, 

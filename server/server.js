@@ -9,7 +9,7 @@ const MONGODB_URL = process.env.MONGO_URL;
 
 //Routes
 const authRoutes = require('./router/AuthRouter');
-const paymentRoutes = require('./router/PaymentRouter');
+const paymentRoutes = require('./routes/payment');
 const orderRoutes = require('./router/OrderRouter');
 const DelPersonRouter = require('./router/DelPersonRoutes');
 const addtocartRouter = require('./router/CartRouter');
@@ -80,7 +80,10 @@ app.use('/api/cart', addtocartRouter);
 app.use('/api/user', userRoute);
 
 
-
+app.get("/images/:id", (req, res) => {
+  const { id } = req.params;
+  res.sendFile(__dirname + `/ImageStore/${id}`);
+});
 
 
 //Admin API
@@ -98,6 +101,25 @@ app.use('/citystore',require('./router/ChickenStoreRouter'))
 //Add Delivery Person and Get locatio and for admin and user.
 
 app.use('/Adminstore/delivery', DelPersonRouter);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.get("/images/:id", (req, res) => {
+  const { id } = req.params;
+  res.sendFile(__dirname + `/ImageStore/${id}`);
+});
+
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

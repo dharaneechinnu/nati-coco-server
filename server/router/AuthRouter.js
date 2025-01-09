@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 
-// 
 router.route('/login').post(require('../Controller/User/AuthController').login);
 router.route('/Register').post(require('../Controller/User/AuthController').register);
 router.route('/users').get(require('../Controller/User/AuthController').getUsers);

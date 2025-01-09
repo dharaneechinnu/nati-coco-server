@@ -6,26 +6,39 @@ const paymentSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  razorpayOrderId: {
+    type: String,
+    required: true
+  },
+  razorpayPaymentId: {
+    type: String
+  },
   amount: {
     type: Number,
     required: true
   },
-  upiId: {
-    type: String,
-    required: true
-  },
-  description: String,
   status: {
     type: String,
     enum: ['PENDING', 'SUCCESS', 'FAILED'],
     default: 'PENDING'
   },
-  transactionId: String,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  items: [{
+    productId: String,
+    quantity: Number,
+    price: Number
+  }],
   createdAt: {
     type: Date,
     default: Date.now
   },
-  updatedAt: Date
+  updatedAt: {
+    type: Date
+  }
 });
 
 module.exports = mongoose.model('Payment', paymentSchema);

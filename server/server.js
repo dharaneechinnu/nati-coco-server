@@ -115,11 +115,6 @@ app.use('/Adminstore/delivery', DelPersonRouter);
 
 
 
-app.get("/images/:id", (req, res) => {
-  const { id } = req.params;
-  res.sendFile(__dirname + `/ImageStore/${id}`);
-});
-
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

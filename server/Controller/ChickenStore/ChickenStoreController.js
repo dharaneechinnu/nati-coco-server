@@ -10,39 +10,49 @@ const path = require('path');
 // CityStore Login
 const CityStoreLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      res.status(400).json({ message: "Enter All fields" });
+    const { mobileno, password } = req.body;
+
+    // Validate input fields
+    if (!mobileno || !password) {
+      return res.status(400).json({ message: "Enter All fields" });
     }
-    const user = await CityStore.findOne({ email });
+
+    // Find user by phone number
+    const user = await CityStore.findOne({ mobileno });
     if (!user) {
-      res.status(400).json({ message: "Email Not Found" });
+      return res.status(400).json({ message: "Phone Number Not Found" });
     }
-    const Isvalidate = await bcrypt.compare(password, user.password);
-    if (Isvalidate) {
+
+    // Validate password
+    const isValidate = await bcrypt.compare(password, user.password);
+    if (isValidate) {
+      // Generate access token
       const accessToken = jwt.sign(
-        { email: email, userId: user._id },
+        { mobileno: mobileno, userId: user._id },
         process.env.CITYOWNER_TOKEN,
         { expiresIn: '1d' }
       );
-      res.status(200).json({
-        message: "CityStore Login Successfull",
+
+      // Respond with user data and token
+      return res.status(200).json({
+        message: "CityStore Login Successful",
         accessToken,
         user: {
           userId: user._id,
           name: user.name,
           mobileno: user.mobileno,
-          email: user.email,
+          email:user.email,
         }
       });
     } else {
-      res.status(401).json({ message: "Wrong Password!.." });
+      return res.status(401).json({ message: "Wrong Password!" });
     }
   } catch (error) {
     console.error("Error during login:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 // Multer Setup for File Uploads
 const storage = multer.diskStorage({
@@ -253,7 +263,7 @@ const getDeliveryPersons = async (req, res) => {
 // Get Orders
 const getOrders = async (req, res) => {
   try {
-    const { storeId } = req.body;
+    const { storeId } = req.params; // Accessing storeId from req.params
     const orders = await Order.find({ storeId: storeId });
     res.status(200).json(orders);
   } catch (error) {
@@ -261,6 +271,33 @@ const getOrders = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+const updateOrder = async (req, res) => {
+  try {
+    const { orderId, status } = req.body; // Extract both orderId and status from the request body
+
+    console.log("Order ID:", orderId);
+    console.log("Status:", status);
+
+    // Find and update the order by the custom `orderId` field
+    const updatedOrder = await Order.findOneAndUpdate(
+      { orderId },  // Match the `orderId` field in the database
+      { status },   // Update the `status` field
+      { new: true }  // Return the updated document
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json({ message: "Order updated successfully", order: updatedOrder });
+  } catch (error) {
+    console.error("Error updating order:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
 
 module.exports = { 
   CityStoreLogin, 
@@ -271,5 +308,6 @@ module.exports = {
   addDeliveryPerson, 
   getDeliveryPersons, 
   getOrders,
-  getMenuItemsByCategory 
+  getMenuItemsByCategory,
+  updateOrder
 };

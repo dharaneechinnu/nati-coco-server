@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {CityStoreLogin,addMenuItem,updateMenuItem,deleteMenuItem,getOrders, getMenuItems,getMenuItemsByCategory} = require('../Controller/ChickenStore/ChickenStoreController')
+const {CityStoreLogin,addMenuItem,updateMenuItem,deleteMenuItem,getOrders, getMenuItems,getMenuItemsByCategory,updateOrder} = require('../Controller/ChickenStore/ChickenStoreController')
  
  
 //cityStore Login Router
@@ -15,7 +15,9 @@ router.delete('/Deletemenu/:id',deleteMenuItem);
 router.get('/getallmenu',getMenuItems)
 router.get('/getcarmenu',getMenuItemsByCategory)
 //cityStore GetOrder item Router
-router.get("/getorder", getOrders);
+router.get('/orders/:storeId', getOrders);
+router.post('/updateorder', updateOrder);
+
 
  
 module.exports = router;

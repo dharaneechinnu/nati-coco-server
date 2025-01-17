@@ -160,7 +160,7 @@ const updateMenuItem = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { category, subCategory, itemName, description, price, availability } = req.body;
+    const { category, subCategory, itemName, description, price, availability,newArrival,BestSeller,stock } = req.body;
     const image = req.file ? `/ImageStore/${req.file.filename}` : null;
 
     try {
@@ -171,6 +171,9 @@ const updateMenuItem = async (req, res) => {
         description,
         price,
         availability,
+        newArrival,
+        BestSeller,
+        stock,
       };
 
       if (image) updateData.image = image;

@@ -18,7 +18,7 @@ const OrderSchema = new mongoose.Schema({
 
   items: [
     {
-      itemId: { type: mongoose.Schema.Types.ObjectId, required: true }, // Reference to the item
+      itemId: { type: mongoose.Schema.Types.ObjectId, required: true },
       itemName: { type: String, required: true },
       quantity: { type: Number, required: true },
       price: { type: Number, required: true },
@@ -36,18 +36,46 @@ const OrderSchema = new mongoose.Schema({
   },
   deliveryPersonId: {
     type: Number,
-    
   },
   status: {
     type: String,
-    enum: ["Pending", "Assigned", "Delivered"],
+    enum: ["PENDING", "PREPARING", "READY", "COMPLETED", "REJECTED"],
     required: true,
-    default: "Pending",
+    default: "PENDING",
   },
   location: {
     latitude: { type: Number, default: null },
     longitude: { type: Number, default: null },
   },
+  // New fields for OTP verification
+  deliveryOTP: {
+    type: String,
+    default: null
+  },
+  otpGeneratedAt: {
+    type: Date,
+    default: null
+  },
+  completedAt: {
+    type: Date,
+    default: null
+  },
+  rejectedAt: {
+    type: Date,
+    default: null
+  },
+  rejectionReason: {
+    type: String,
+    default: null
+  },
+  preparingStartedAt: {
+    type: Date,
+    default: null
+  },
+  readyAt: {
+    type: Date,
+    default: null
+  }
 }, { timestamps: true });
 
 const ordermodel = mongoose.model("Order", OrderSchema);

@@ -3,6 +3,7 @@ const Store = require('../../models/CityOwnerModel');
 const MenuModels = require('../../models/MenuModel');
 const geolib = require('geolib'); // Added missing geolib import
 const mongoose = require("mongoose");
+const crypto = require('crypto');
 
 const generateUniqueOrderId = async () => {
   const maxAttempts = 10;
@@ -254,8 +255,79 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
   }
 };
 
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const markOrderReady = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    const otp = generateOTP();
+
+    const order = await Order.findOneAndUpdate(
+      { orderId: orderId },
+      { 
+        status: 'READY',
+        deliveryOTP: otp,
+        otpGeneratedAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Here you would typically send the OTP to the delivery person via SMS/email
+    // For now, we'll just return it in the response
+    res.json({ 
+      success: true, 
+      message: 'Order marked as ready',
+      otp: otp  // In production, you'd send this to the delivery person instead
+    });
+  } catch (error) {
+    console.error('Error marking order as ready:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const verifyAndComplete = async (req, res) => {
+  try {
+    const { orderId, otp } = req.body;
+
+    const order = await Order.findOne({ orderId: orderId });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Verify OTP
+    if (order.deliveryOTP !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    // Check if OTP is expired (optional: OTP valid for 1 hour)
+    const otpAge = (new Date() - new Date(order.otpGeneratedAt)) / 1000 / 60 / 60; // hours
+    if (otpAge > 1) {
+      return res.status(400).json({ success: false, message: 'OTP expired' });
+    }
+
+    // Update order status
+    order.status = 'COMPLETED';
+    order.completedAt = new Date();
+    await order.save();
+
+    res.json({ success: true, message: 'Order completed successfully' });
+  } catch (error) {
+    console.error('Error verifying and completing order:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
     createOrder,
     findNearestStoreAndDisplayMenu,
-    getOrderAnalytics
+    getOrderAnalytics,
+    markOrderReady,
+    verifyAndComplete
 };

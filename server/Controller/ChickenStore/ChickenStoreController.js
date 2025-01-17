@@ -112,6 +112,46 @@ const addMenuItem = async (req, res) => {
   });
 };
 
+//store open or close
+// controllers/storeController.js
+const updateStoreAvailability = async (req, res) => {
+  try {
+    const { storeId, isOpen } = req.body;
+
+    if (!storeId || isOpen === undefined) {
+      return res.status(400).json({ success: false, message: 'Store ID and status are required' });
+    }
+
+    // Simulating a database update (replace with actual DB logic)
+    const updatedStore = await CityStore.findByIdAndUpdate(
+      storeId,
+      { isOpen },
+      { new: true }
+    );
+
+    if (!updatedStore) {
+      return res.status(404).json({ success: false, message: 'Store not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Store availability updated successfully',
+      store: updatedStore,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating store availability',
+      error: error.message,
+    });
+  }
+};
+
+module.exports = {
+  updateStoreAvailability,
+};
+
+
 // Update Menu Item by ID with Image Upload
 const updateMenuItem = async (req, res) => {
   upload.single('image')(req, res, async (err) => {
@@ -309,5 +349,6 @@ module.exports = {
   getDeliveryPersons, 
   getOrders,
   getMenuItemsByCategory,
-  updateOrder
+  updateOrder,
+  updateStoreAvailability
 };

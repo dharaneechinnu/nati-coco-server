@@ -27,6 +27,10 @@ const CityOwnerschema = new mongoose.Schema({
         type:String,
         required:true,
     },
+    isOpen: {
+        type: Boolean,
+        default: true,
+    },
     locations: {
         latitude: { type: Number, required: true },
         longitude: { type: Number, required: true },

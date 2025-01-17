@@ -11,7 +11,7 @@ textflow.useKey('JvlPkiAbXej0ZfoTibTeivyehdibSWaRHyEE6VeeNQbmnYmGqcI1y4HtdFy1x6I
 const login = async (req, res) => {
     try {
         const { mobileno, password } = req.body;
- 
+ console.log(mobileno,password)
         if (!mobileno || !password) {
             return res.status(400).json({ message: "Enter all fields" });
         }
@@ -78,7 +78,7 @@ const register = async (req, res) => {
 const getOtp = async (req, res) => {
     try {
         const { phoneNumber } = req.body;
- 
+ console.log(phoneNumber)
         // Check if the phone number is provided
         if (!phoneNumber) {
             return res.status(400).json({ message: "Phone number is required" });

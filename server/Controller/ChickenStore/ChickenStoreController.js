@@ -10,39 +10,49 @@ const path = require('path');
 // CityStore Login
 const CityStoreLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      res.status(400).json({ message: "Enter All fields" });
+    const { mobileno, password } = req.body;
+
+    // Validate input fields
+    if (!mobileno || !password) {
+      return res.status(400).json({ message: "Enter All fields" });
     }
-    const user = await CityStore.findOne({ email });
+
+    // Find user by phone number
+    const user = await CityStore.findOne({ mobileno });
     if (!user) {
-      res.status(400).json({ message: "Email Not Found" });
+      return res.status(400).json({ message: "Phone Number Not Found" });
     }
-    const Isvalidate = await bcrypt.compare(password, user.password);
-    if (Isvalidate) {
+
+    // Validate password
+    const isValidate = await bcrypt.compare(password, user.password);
+    if (isValidate) {
+      // Generate access token
       const accessToken = jwt.sign(
-        { email: email, userId: user._id },
+        { mobileno: mobileno, userId: user._id },
         process.env.CITYOWNER_TOKEN,
         { expiresIn: '1d' }
       );
-      res.status(200).json({
-        message: "CityStore Login Successfull",
+
+      // Respond with user data and token
+      return res.status(200).json({
+        message: "CityStore Login Successful",
         accessToken,
         user: {
           userId: user._id,
           name: user.name,
           mobileno: user.mobileno,
-          email: user.email,
+          email:user.email,
         }
       });
     } else {
-      res.status(401).json({ message: "Wrong Password!.." });
+      return res.status(401).json({ message: "Wrong Password!" });
     }
   } catch (error) {
     console.error("Error during login:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 // Multer Setup for File Uploads
 const storage = multer.diskStorage({
@@ -66,47 +76,43 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-// Add Menu Item with Image Upload
 const addMenuItem = async (req, res) => {
   upload.single('image')(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ message: 'File upload failed', error: err.message });
     }
 
-    console.log('File uploaded:', req.file);  // Corrected this line
-    
-    const { storeId, itemName, description, price } = req.body;
+    const { storeId, category, subCategory, itemName, description, price, availability } = req.body;
 
-    // Ensure that an image is uploaded
+    // Ensure an image is uploaded
     if (!req.file) {
       return res.status(400).json({ message: 'Image file is required' });
     }
 
     try {
-      // Create the new menu item in the database
       const menuItem = await MenuModels.create({
         storeId,
+        category,
+        subCategory,
         itemName,
         description,
         price,
-        image: `/ImageStore/${req.file.filename}`,  // Image URL with filename
+        availability,
+        image: `/ImageStore/${req.file.filename}`, // Save image path
       });
 
-      console.log('Menu item added:', menuItem);  // Corrected this line
       res.status(201).json({
         message: 'Menu item added successfully',
         menuItem,
       });
     } catch (error) {
-      console.error('Error adding menu item:', error);  // Corrected this line
+      console.error('Error adding menu item:', error);
       res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   });
 };
 
-
-
-// Update Menu Item by CityStore with Image Upload
+// Update Menu Item by ID with Image Upload
 const updateMenuItem = async (req, res) => {
   upload.single('image')(req, res, async (err) => {
     if (err) {
@@ -114,15 +120,22 @@ const updateMenuItem = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { itemName, description, price, availability } = req.body;
+    const { category, subCategory, itemName, description, price, availability } = req.body;
     const image = req.file ? `/ImageStore/${req.file.filename}` : null;
 
     try {
-      const updatedMenuItem = await MenuModels.findByIdAndUpdate(
-        id,
-        { itemName, description, price, image, availability },
-        { new: true }
-      );
+      const updateData = {
+        category,
+        subCategory,
+        itemName,
+        description,
+        price,
+        availability,
+      };
+
+      if (image) updateData.image = image;
+
+      const updatedMenuItem = await MenuModels.findByIdAndUpdate(id, updateData, { new: true });
 
       if (!updatedMenuItem) {
         return res.status(404).json({ message: 'Menu item not found' });
@@ -139,7 +152,7 @@ const updateMenuItem = async (req, res) => {
   });
 };
 
-// Delete Menu Item by CityStore
+// Delete Menu Item by ID
 const deleteMenuItem = async (req, res) => {
   const { id } = req.params;
 
@@ -157,24 +170,49 @@ const deleteMenuItem = async (req, res) => {
   }
 };
 
-// Get Menu Items
-const getMenuItems = async (req, res) => {
-  try {
-    const menuItems = await MenuModels.find();
+// Get Menu Items by Category, Subcategory, and Store ID
+const getMenuItemsByCategory = async (req, res) => {
+  const { subCategory, storeId } = req.query;
 
-    // Check if menu items are found
+  try {
+    const query = {};
+    if (subCategory) query.subCategory = subCategory;
+    if (storeId) query.storeId = storeId;
+
+    const menuItems = await MenuModels.find(query);
+
     if (!menuItems || menuItems.length === 0) {
-      return res.status(404).json({ message: 'No menu items found' });
+      return res.status(404).json({ message: 'No menu items found for the specified filters' });
     }
 
-    // Respond with all menu items, including image URLs
+    res.status(200).json(menuItems);
+  } catch (error) {
+    console.error('Error fetching menu items by category:', error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
+
+// Get All Menu Items by Store ID
+const getMenuItems = async (req, res) => {
+  const { storeId } = req.query;
+
+  try {
+    const query = {};
+    if (storeId) query.storeId = storeId;
+
+    const menuItems = await MenuModels.find(query);
+
+    if (!menuItems || menuItems.length === 0) {
+      return res.status(404).json({ message: 'No menu items found for the specified store' });
+    }
+
     res.status(200).json(menuItems);
   } catch (error) {
     console.error('Error fetching menu items:', error);
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
-
 
 // Add Delivery Person
 const addDeliveryPerson = async (req, res) => {
@@ -225,7 +263,7 @@ const getDeliveryPersons = async (req, res) => {
 // Get Orders
 const getOrders = async (req, res) => {
   try {
-    const { storeId } = req.body;
+    const { storeId } = req.params; // Accessing storeId from req.params
     const orders = await Order.find({ storeId: storeId });
     res.status(200).json(orders);
   } catch (error) {
@@ -233,6 +271,33 @@ const getOrders = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+const updateOrder = async (req, res) => {
+  try {
+    const { orderId, status } = req.body; // Extract both orderId and status from the request body
+
+    console.log("Order ID:", orderId);
+    console.log("Status:", status);
+
+    // Find and update the order by the custom `orderId` field
+    const updatedOrder = await Order.findOneAndUpdate(
+      { orderId },  // Match the `orderId` field in the database
+      { status },   // Update the `status` field
+      { new: true }  // Return the updated document
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json({ message: "Order updated successfully", order: updatedOrder });
+  } catch (error) {
+    console.error("Error updating order:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
 
 module.exports = { 
   CityStoreLogin, 
@@ -242,5 +307,7 @@ module.exports = {
   getMenuItems, 
   addDeliveryPerson, 
   getDeliveryPersons, 
-  getOrders 
+  getOrders,
+  getMenuItemsByCategory,
+  updateOrder
 };

@@ -6,9 +6,16 @@ const OrderSchema = new mongoose.Schema({
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "UsersLogins",
     required: true,
   },
+  
+  storeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "citystore",
+    required: true,
+  },
+
   items: [
     {
       itemId: { type: mongoose.Schema.Types.ObjectId, required: true }, // Reference to the item

@@ -2,6 +2,7 @@ const Order = require("../../models/Ordermodels");
 const Store = require('../../models/CityOwnerModel');
 const MenuModels = require('../../models/MenuModel');
 const geolib = require('geolib'); // Added missing geolib import
+const mongoose = require("mongoose");
 
 const generateUniqueOrderId = async () => {
   const maxAttempts = 10;
@@ -30,18 +31,18 @@ const generateUniqueOrderId = async () => {
 
 const createOrder = async (req, res) => {
   try {
-    const {
-      userId,
-      storeId,
-      items,
-      amount,
-      paymentStatus,
-      deliveryPersonId,
-      location,
-    } = req.body;
+    const { userId, storeId, items, amount, paymentStatus, deliveryPersonId, location } = req.body;
 
+    console.log("Incoming Order Data:", req.body);
+
+    // Validate required fields
     if (!userId || !amount || !paymentStatus) {
       return res.status(400).json({ message: "Missing required fields." });
+    }
+
+    // Validate `userId` as an ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid userId format." });
     }
 
     const orderId = await generateUniqueOrderId();
@@ -60,9 +61,10 @@ const createOrder = async (req, res) => {
     res.status(201).json({ message: "Order created successfully", order: newOrder });
   } catch (error) {
     console.error("Error creating order:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error", error });
   }
 };
+
 
 const getOrderAnalytics = async (req, res) => {
     try {
@@ -236,8 +238,13 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
     res.json({
       message: `Nearest store menu retrieved successfully`,
       nearestStoreId: nearestStore.id,
-      menu: storeMenu
+      menu: storeMenu.map(item => ({
+        ...item._doc,
+        image: `http://${req.headers.host}/ImageStore/${item.image}`, // Ensure correct path
+      })),
     });
+    
+    
   } catch (error) {
     console.error("Error finding nearest store and its menu:", error);
     res.status(500).json({ 

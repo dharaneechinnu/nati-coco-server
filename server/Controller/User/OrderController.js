@@ -360,14 +360,56 @@ const markOrderReadyAndAssignDelivery = async (req, res) => {
   }
 };
 
+const getMyOrders = async (req, res) => {
+  try {
+    const { userId } = req.params;
 
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID format" });
+    }
 
+    // Fetch orders from DB
+    const orders = await Order.find({ userId })
+      .populate("storeId", "name locations") // Fetch store details
+      .sort({ createdAt: -1 }); // Sort by latest order first
 
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ success: false, message: "No orders found for this user" });
+    }
 
+    // Format orders for better response
+    const formattedOrders = orders.map((order) => ({
+      orderId: order.orderId,
+      status: order.status,
+      totalAmount: order.amount,
+      paymentStatus: order.paymentStatus,
+      orderDate: order.createdAt.toLocaleString(),
+      store: {
+        name: order.storeId?.name || "Unknown Store",
+        location: order.storeId?.locations || "Not Available",
+      },
+      items: order.items.map((item) => ({
+        name: item.itemName || "Unknown Item",
+        price: item.price || 0,
+        quantity: item.quantity,
+      })),
+      deliveryOTP: order.deliveryOTP,
+      timestamps: {
+        preparingStartedAt: order.preparingStartedAt,
+        readyAt: order.readyAt,
+        completedAt: order.completedAt,
+        rejectedAt: order.rejectedAt,
+        rejectionReason: order.rejectionReason,
+      },
+    }));
 
-
-
-
+    res.status(200).json({ success: true, orders: formattedOrders });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ success: false, message: "Error fetching orders", error: error.message });
+  }
+};
 
 const verifyAndComplete = async (req, res) => {
   try {
@@ -407,5 +449,6 @@ module.exports = {
     findNearestStoreAndDisplayMenu,
     getOrderAnalytics,
     markOrderReadyAndAssignDelivery,
-    verifyAndComplete
+    verifyAndComplete,
+    getMyOrders
 };

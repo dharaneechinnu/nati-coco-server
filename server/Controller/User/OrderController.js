@@ -264,94 +264,141 @@ const markOrderReadyAndAssignDelivery = async (req, res) => {
   try {
     const { orderId, storeId } = req.body;
 
-    // Fetch store details to get location
+    // Validate required fields
+    if (!storeId || !orderId) {
+      console.error('Missing required fields: storeId or orderId');
+      return res.status(400).json({ success: false, message: 'Missing required fields: storeId or orderId' });
+    }
+
+    // Fetch store details
     const store = await Store.findById(storeId);
     if (!store) {
+      console.error(`Store not found for storeId: ${storeId}`);
       return res.status(404).json({ success: false, message: 'Store not found' });
     }
 
-    const { latitude, longitude } = store.locations; 
+    console.log('Store details:', store);
 
-    // Mark the order as ready
+    // Check if store location exists and has coordinates
+    if (!store.locations || !store.locations.latitude || store.locations.longitude.length < 2) {
+      console.error('Store location details are missing or invalid');
+      return res.status(400).json({ success: false, message: 'Store location details are missing or invalid' });
+    }
+
+    const { latitude: storeLat, longitude: storeLon } = store.locations;
+
+    // Find delivery persons within 10 km radius of the store location
+    const maxDistance = 10 * 1000; // 10 km in meters
+    console.log(`Searching for delivery persons within a ${maxDistance / 1000} km radius of the store...`);
+
+    const deliveryPersons = await DeliveryPerson.find({
+      availability: true,
+      location: {
+        $geoWithin: {
+          $centerSphere: [[storeLon, storeLat], maxDistance / 6378100], // Convert meters to radians
+        },
+      },
+    });
+
+    console.log('Found delivery persons:', deliveryPersons);
+
+    if (deliveryPersons.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No available delivery persons found within 10 km of the store',
+      });
+    }
+
+    // Use geolib to find the nearest delivery person
+    let nearestDeliveryPerson = null;
+    let shortestDistance = Infinity;
+
+    for (const person of deliveryPersons) {
+      const distance = geolib.getDistance(
+        { latitude: storeLat, longitude: storeLon },
+        { latitude: person.location.coordinates[1], longitude: person.location.coordinates[0] }
+      );
+
+      console.log(`Distance to delivery person ${person.name}: ${distance} meters`);
+
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestDeliveryPerson = person;
+      }
+    }
+
+    if (!nearestDeliveryPerson) {
+      console.error('Failed to find the nearest delivery person');
+      return res.status(404).json({
+        success: false,
+        message: 'No nearby delivery person found within 10 km of the store',
+      });
+    }
+
+    console.log('Nearest delivery person:', nearestDeliveryPerson);
+
+    // Generate OTP for delivery
     const otp = generateOTP();
+
+    // Update order status to 'READY' and assign the delivery person
     const order = await Order.findOneAndUpdate(
       { orderId },
       {
         status: 'READY',
         deliveryOTP: otp,
         otpGeneratedAt: new Date(),
+        deliveryPersonId: nearestDeliveryPerson._id,
       },
       { new: true }
     );
 
     if (!order) {
+      console.error(`Order not found for orderId: ${orderId}`);
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Find the nearest delivery person
-    const deliveryPersons = await DeliveryPerson.find({
-      availability: true,
-      "location.latitude": { $exists: true },
-      "location.longitude": { $exists: true },
-    });
+    console.log('Order updated:', order);
 
-    if (deliveryPersons.length === 0) {
-      return res.status(404).json({ message: "No available delivery persons found!" });
-    }
-
-    let nearestPerson = null;
-    let shortestDistance = Infinity;
-
-    for (const person of deliveryPersons) {
-      const distance = geolib.getDistance(
-        { latitude, longitude },
-        {
-          latitude: person.location.latitude,
-          longitude: person.location.longitude,
-        }
-      );
-
-      if (distance < shortestDistance) {
-        shortestDistance = distance;
-        nearestPerson = person;
-      }
-    }
-
-    if (!nearestPerson) {
-      return res.status(404).json({ message: "Could not find a nearby delivery person" });
-    }
-
-    // Assign the nearest delivery person to the order
-    await Order.findOneAndUpdate(
-      { orderId },
-      { deliveryPersonId: nearestPerson.deliveryPersonId },
-      { new: true }
-    );
-
-    // Update delivery person availability
-    await DeliveryPerson.findOneAndUpdate(
-      { deliveryPersonId: nearestPerson.deliveryPersonId },
+    // Update delivery person's availability to false (no longer available)
+    const updatedPerson = await DeliveryPerson.findOneAndUpdate(
+      { _id: nearestDeliveryPerson._id },
       { availability: false },
       { new: true }
     );
 
+    console.log('Updated delivery person:', updatedPerson);
+
+    // Respond with success and OTP information
     res.status(200).json({
       success: true,
       message: 'Order marked as ready and delivery person assigned',
       otp,
       deliveryPerson: {
-        id: nearestPerson.deliveryPersonId,
-        name: nearestPerson.name,
-        location: nearestPerson.location,
+        id: nearestDeliveryPerson._id,
+        name: nearestDeliveryPerson.name,
+        location: nearestDeliveryPerson.location,
       },
       distance: `${(shortestDistance / 1000).toFixed(2)} km`,
       order,
     });
   } catch (error) {
-    console.error('Error in markReadyAndAssign:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error in markOrderReadyAndAssignDelivery:', error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error occurred',
+      error: error.message || 'An unexpected error occurred',
+    });
   }
 };
+
+
+
+
+
+
+
+
 
 
 const verifyAndComplete = async (req, res) => {

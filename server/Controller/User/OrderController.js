@@ -1,5 +1,6 @@
 const Order = require("../../models/Ordermodels");
 const Store = require('../../models/CityOwnerModel');
+const DeliveryPerson = require("../../models/DeliveryModels");
 const MenuModels = require('../../models/MenuModel');
 const geolib = require('geolib'); // Added missing geolib import
 const mongoose = require("mongoose");
@@ -259,17 +260,26 @@ const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-const markOrderReady = async (req, res) => {
+const markOrderReadyAndAssignDelivery = async (req, res) => {
   try {
-    const { orderId } = req.body;
-    const otp = generateOTP();
+    const { orderId, storeId } = req.body;
 
+    // Fetch store details to get location
+    const store = await Store.findById(storeId);
+    if (!store) {
+      return res.status(404).json({ success: false, message: 'Store not found' });
+    }
+
+    const { latitude, longitude } = store.locations; 
+
+    // Mark the order as ready
+    const otp = generateOTP();
     const order = await Order.findOneAndUpdate(
-      { orderId: orderId },
-      { 
+      { orderId },
+      {
         status: 'READY',
         deliveryOTP: otp,
-        otpGeneratedAt: new Date()
+        otpGeneratedAt: new Date(),
       },
       { new: true }
     );
@@ -278,18 +288,71 @@ const markOrderReady = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Here you would typically send the OTP to the delivery person via SMS/email
-    // For now, we'll just return it in the response
-    res.json({ 
-      success: true, 
-      message: 'Order marked as ready',
-      otp: otp  // In production, you'd send this to the delivery person instead
+    // Find the nearest delivery person
+    const deliveryPersons = await DeliveryPerson.find({
+      availability: true,
+      "location.latitude": { $exists: true },
+      "location.longitude": { $exists: true },
+    });
+
+    if (deliveryPersons.length === 0) {
+      return res.status(404).json({ message: "No available delivery persons found!" });
+    }
+
+    let nearestPerson = null;
+    let shortestDistance = Infinity;
+
+    for (const person of deliveryPersons) {
+      const distance = geolib.getDistance(
+        { latitude, longitude },
+        {
+          latitude: person.location.latitude,
+          longitude: person.location.longitude,
+        }
+      );
+
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestPerson = person;
+      }
+    }
+
+    if (!nearestPerson) {
+      return res.status(404).json({ message: "Could not find a nearby delivery person" });
+    }
+
+    // Assign the nearest delivery person to the order
+    await Order.findOneAndUpdate(
+      { orderId },
+      { deliveryPersonId: nearestPerson.deliveryPersonId },
+      { new: true }
+    );
+
+    // Update delivery person availability
+    await DeliveryPerson.findOneAndUpdate(
+      { deliveryPersonId: nearestPerson.deliveryPersonId },
+      { availability: false },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Order marked as ready and delivery person assigned',
+      otp,
+      deliveryPerson: {
+        id: nearestPerson.deliveryPersonId,
+        name: nearestPerson.name,
+        location: nearestPerson.location,
+      },
+      distance: `${(shortestDistance / 1000).toFixed(2)} km`,
+      order,
     });
   } catch (error) {
-    console.error('Error marking order as ready:', error);
+    console.error('Error in markReadyAndAssign:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
 
 const verifyAndComplete = async (req, res) => {
   try {
@@ -328,6 +391,6 @@ module.exports = {
     createOrder,
     findNearestStoreAndDisplayMenu,
     getOrderAnalytics,
-    markOrderReady,
+    markOrderReadyAndAssignDelivery,
     verifyAndComplete
 };

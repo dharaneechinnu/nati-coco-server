@@ -38,6 +38,7 @@ const DeliveryPersonSchema = new mongoose.Schema(
     otpExpire: {
       type: Date,
     },
+    documents: [String],  // Array to store file paths
   },
   { timestamps: true }
 );

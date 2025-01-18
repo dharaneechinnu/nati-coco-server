@@ -319,6 +319,7 @@ const storage = multer.diskStorage({
   };
   
   // Create the multer upload instance with multiple files
+
   const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
@@ -326,8 +327,7 @@ const storage = multer.diskStorage({
   
   // Endpoint to verify documents
   const verifyDocument = (req, res) => {
-    // Upload files using multer
-    upload(req, res, (err) => {
+    upload(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
         return res.status(400).json({ message: `Multer error: ${err.message}` });
       } else if (err) {
@@ -341,12 +341,88 @@ const storage = multer.diskStorage({
       // Successfully uploaded the documents
       const filePaths = req.files.map(file => file.path); // Get the paths of all uploaded files
   
-      // Respond with a success message and the paths of the uploaded files
-      return res.status(200).json({
-        message: "Documents uploaded successfully",
-        filePaths: filePaths,
-      });
+      // Save file paths in the database
+      try {
+        const deliveryPerson = await deliveryPersonModel.findOneAndUpdate(
+          { phone: req.body.phone },
+          { $push: { documents: { $each: filePaths } } },  // Add the new file paths to the documents array
+          { new: true }
+        );
+  
+        return res.status(200).json({
+          message: "Documents uploaded successfully",
+          filePaths: filePaths,
+          deliveryPerson: deliveryPerson,  // Optionally return the updated delivery person object
+        });
+      } catch (error) {
+        console.error('Error updating delivery person:', error);
+        res.status(500).json({ message: 'Error saving document details' });
+      }
     });
+  };
+  
+  
+
+  // Endpoint to get delivery person details by phone number
+const getDeliveryPersonDetails = async (req, res) => {
+    try {
+      const { phonenumber } = req.params;
+  
+      // Find the delivery person in the database
+      const deliveryPerson = await deliveryPersonModel.findOne({ phonenumber: phonenumber });
+  
+      if (!deliveryPerson) {
+        return res.status(404).json({ message: "Delivery person not found" });
+      }
+  
+      // Include file paths in the response (assuming they are stored in an array called "documentPaths" in the DB)
+      const documents = deliveryPerson.documents || []; // Adjust based on your model
+  
+      return res.status(200).json({
+        message: "Delivery person details retrieved successfully",
+        deliveryPerson: {
+          name: deliveryPerson.name,
+          phone: deliveryPerson.phonenumber,
+          email: deliveryPerson.email,
+          isVerified: deliveryPerson.isVerified,
+          documents: documents, // Add document paths here
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching delivery person details:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+  
+
+  // Endpoint to mark delivery person as verified
+const verifyDeliveryPerson = async (req, res) => {
+    try {
+      const { phonenumber } = req.params;
+  
+      // Find the delivery person and update the `isVerified` field
+      const deliveryPerson = await deliveryPersonModel.findOneAndUpdate(
+        { phonenumber: phonenumber },
+        { isVerified: true },
+        { new: true }
+      );
+  
+      if (!deliveryPerson) {
+        return res.status(404).json({ message: "Delivery person not found" });
+      }
+  
+      return res.status(200).json({
+        message: "Delivery person verified successfully",
+        deliveryPerson: {
+          name: deliveryPerson.name,
+          phone: deliveryPerson.phonenumber,
+          isVerified: deliveryPerson.isVerified,
+        },
+      });
+    } catch (error) {
+      console.error('Error verifying delivery person:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
   };
   
 
@@ -357,5 +433,7 @@ module.exports = {
     verifyOtp,
     resetPassword,
     resetPasswordConfirm,
-    verifyDocument
+    verifyDocument,
+    getDeliveryPersonDetails,
+    verifyDeliveryPerson
 };

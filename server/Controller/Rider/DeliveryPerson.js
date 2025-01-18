@@ -84,11 +84,11 @@ const findNearestDeliveryPerson = async (req, res) => {
 
 
 const updateLocation = async (req, res) => {
-  const { deliveryPersonId, latitude, longitude } = req.body;
+  const { deliverypersonId, latitude, longitude } = req.body;
 
   try {
     const deliveryPerson = await DeliveryPerson.findOneAndUpdate(
-      {deliveryPersonId},
+      {deliverypersonId},
       { location: { latitude, longitude } },
       { new: true }
     );

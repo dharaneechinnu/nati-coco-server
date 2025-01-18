@@ -2,19 +2,42 @@ const mongoose = require("mongoose");
 
 const DeliveryPersonSchema = new mongoose.Schema(
   {
-    deliveryPersonId: {
+    deliverypersonId: {
       type: String,
-      required: true,
+    
     },
     name: {
       type: String,
-      required: true,
+     
+    },
+    email:{
+      type:String,
+     
+    },
+    phonenumber:{
+      type:String,
+     
     },
     location: {
       latitude: { type: Number, required: false },
       longitude: { type: Number, required: false },
     },
-    availability: { type: Boolean, required: true, default: true },
+    availability: { 
+      type: Boolean,
+    
+      default: true
+     },
+    isVerified:{
+      type:Boolean,
+      default:false
+    },
+    otpToken: {
+      type: String,
+      default:null,
+    },
+    otpExpire: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

@@ -1,17 +1,29 @@
 const express = require("express");
 const { updateLocation,getDeliveryPersonLocation,findNearestDeliveryPerson, updateDeliveryStatus, getOrderHistory } = require("../Controller/Rider/DeliveryPerson");
-const { addDeliveryPerson, getDeliveryPersons } = require("../Controller/ChickenStore/ChickenStoreController");
-
+const {  getDeliveryPersons } = require("../Controller/ChickenStore/ChickenStoreController");
+const {DeliverypersonLogin,  DeliverypersonRegister,sendOtp,verifyOtp,resetPassword,resetPasswordConfirm,verifyDocument } = require('../Controller/Rider/DeliveryAuth')
 const router = express.Router();
 
-router.post('/add', addDeliveryPerson);
+
+//Delivery Login Credentials
+router.post('/login',DeliverypersonLogin)
+router.post('/Register',DeliverypersonRegister)
+router.post('/generate-otp',sendOtp)
+router.post('/verify-otp',verifyOtp)
+router.post('/reset-password',resetPassword)
+router.patch('/resetpass-otp',resetPasswordConfirm)
+router.post('/Verify-document',verifyDocument)
+
+
+
+
 router.get('/getDeliveryPerson',getDeliveryPersons);
-
 router.post("/update-location", updateLocation);
-
 router.get("/location/:orderId", getDeliveryPersonLocation);
-
 router.post("/find-nearest", findNearestDeliveryPerson);
+
+
+
 
 // Route to update delivery status
 router.post("/update-delivery-status", updateDeliveryStatus);

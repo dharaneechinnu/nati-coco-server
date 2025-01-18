@@ -257,30 +257,6 @@ const getMenuItems = async (req, res) => {
   }
 };
 
-// Add Delivery Person
-const addDeliveryPerson = async (req, res) => {
-  try {
-    const { name, deliveryPersonId } = req.body;
-
-    if (!name || !deliveryPersonId) {
-      return res.status(400).json({ message: "Name and deliveryPersonId are required." });
-    }
-
-    const existingPerson = await DeliveryPerson.findOne({ deliveryPersonId });
-    if (existingPerson) {
-      return res.status(400).json({ message: "Delivery person with this ID already exists." });
-    }
-
-    const newPerson = await DeliveryPerson.create({ name, deliveryPersonId });
-    res.status(201).json({
-      message: "Delivery person added successfully.",
-      deliveryPerson: newPerson,
-    });
-  } catch (error) {
-    console.error("Error adding delivery person:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
 
 // Get Delivery Persons
 const getDeliveryPersons = async (req, res) => {
@@ -348,7 +324,6 @@ module.exports = {
   updateMenuItem, 
   deleteMenuItem, 
   getMenuItems, 
-  addDeliveryPerson, 
   getDeliveryPersons, 
   getOrders,
   getMenuItemsByCategory,

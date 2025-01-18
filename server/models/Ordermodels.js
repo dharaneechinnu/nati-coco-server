@@ -35,7 +35,9 @@ const OrderSchema = new mongoose.Schema({
     required: true,
   },
   deliveryPersonId: {
-    type: Number,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DeliveryPerson',  // Reference to the DeliveryPerson model
+    required: true
   },
   status: {
     type: String,

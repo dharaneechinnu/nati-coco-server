@@ -257,7 +257,7 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
 };
 
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return Math.floor(100000 + Math.random() * 900000).toString(); // Generates a 6-digit OTP
 };
 
 const markOrderReadyAndAssignDelivery = async (req, res) => {
@@ -280,22 +280,18 @@ const markOrderReadyAndAssignDelivery = async (req, res) => {
       longitude: store.locations.longitude,
     };
 
-    // Fetch all delivery persons
-    const deliveryPersons = await DeliveryPerson.find();
-    console.log("Delivery Persons in DB:", deliveryPersons);
-
-    const allDeliveryPersons = await DeliveryPerson.find({ availability: true });
-    console.log("All delivery persons:", allDeliveryPersons);
-    if (!allDeliveryPersons.length) {
+    // Fetch all available delivery persons
+    const availableDeliveryPersons = await DeliveryPerson.find({ availability: true });
+    if (!availableDeliveryPersons.length) {
       return res.status(404).json({ message: 'No available delivery persons found' });
     }
 
-    // Calculate distances to store and filter within range
+    // Calculate distances to store and filter within range (20 km)
     const maxDistance = 20000; // 20 km in meters
-    const deliveryPersonsInRange = allDeliveryPersons
+    const deliveryPersonsInRange = availableDeliveryPersons
       .map(person => {
         if (!person.location || !person.location.latitude || !person.location.longitude) {
-          return null;
+          return null;  // Skip persons without a location
         }
 
         const deliveryPersonLocation = {
@@ -304,12 +300,11 @@ const markOrderReadyAndAssignDelivery = async (req, res) => {
         };
 
         const distanceToStore = geolib.getDistance(storeLocation, deliveryPersonLocation);
-        console.log("Distance to store:", distanceToStore);
         return distanceToStore <= maxDistance
           ? { person, distance: distanceToStore }
           : null;
       })
-      .filter(Boolean); // Filter out null values
+      .filter(Boolean);  // Filter out null values
 
     if (!deliveryPersonsInRange.length) {
       return res.status(404).json({ message: 'No delivery persons available within range' });
@@ -324,29 +319,37 @@ const markOrderReadyAndAssignDelivery = async (req, res) => {
       return res.status(404).json({ message: 'Unable to assign a delivery person' });
     }
 
-    // Mark the order as ready
-    const order = await Order.findOne({orderId});
+    console.log('Nearest delivery person:', nearestDeliveryPerson.person.name);
+
+    // Mark the order as ready and assign the delivery person
+    const order = await Order.findOne({ orderId });
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    // Generate and save the OTP for the order
+    const otp = generateOTP();
+    order.deliveryOTP = otp;  // Save the generated OTP in the order document
     order.status = 'READY';
-    order.deliveryPersonId = deliveryPerson._id;
-    console.log(deliveryPerson._id);
+    order.deliveryPersonId = nearestDeliveryPerson.person._id; // Assigning ObjectId correctly
     await order.save();
+    console.log('Order updated:', order);
 
-    // Update the delivery person's availability
+    // Update the delivery person's availability to false (no longer available)
     nearestDeliveryPerson.person.availability = false;
     await nearestDeliveryPerson.person.save();
+    console.log('Updated delivery person availability:', nearestDeliveryPerson.person.name);
 
-    res.json({
+    // Respond with success and delivery details, including OTP
+    res.status(200).json({
       message: 'Order marked as ready and delivery person assigned',
       orderId: order._id,
       deliveryPerson: {
         id: nearestDeliveryPerson.person._id,
         name: nearestDeliveryPerson.person.name,
-        distance: `${(nearestDeliveryPerson.distance / 1000).toFixed(2)} km`,
+        distance: `${(nearestDeliveryPerson.distance / 1000).toFixed(2)} km`,  // Distance in km
       },
+      OTP: order.deliveryOTP,  // Include OTP in the response
     });
   } catch (error) {
     console.error('Error marking order ready and assigning delivery:', error);

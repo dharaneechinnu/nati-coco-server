@@ -361,7 +361,54 @@ const storage = multer.diskStorage({
     });
   };
   
+  const RiderToPostDetails = async (req, res) => {
+    try {
+      const { deliverypersonId, aadharcard, pancard, driving } = req.body;
   
+      // Check for duplicate Aadhar card
+      const Rideraadharcard = await deliveryPersonModel.findOne({ aadharcard });
+      if (Rideraadharcard && Rideraadharcard.deliverypersonId !== deliverypersonId) {
+        return res.status(400).json({ message: "Aadhar card already exists" });
+      }
+  
+      // Check for duplicate PAN card
+      const Riderpancard = await deliveryPersonModel.findOne({ pancard });
+      if (Riderpancard && Riderpancard.deliverypersonId !== deliverypersonId) {
+        return res.status(400).json({ message: "PAN card already exists" });
+      }
+  
+      // Check for duplicate Driving license
+      const Riderdriving = await deliveryPersonModel.findOne({ driving });
+      if (Riderdriving && Riderdriving.deliverypersonId !== deliverypersonId) {
+        return res.status(400).json({ message: "Driving license already exists" });
+      }
+  
+      // Update the delivery person's details or create a new one if not found
+      const newRider = await deliveryPersonModel.findOneAndUpdate(
+        { deliverypersonId }, // Filter by deliverypersonId
+        {
+          aadharcard,
+          pancard,
+          driving,
+        },
+        {
+          new: true, // Return the updated document
+          upsert: true, // Create a new document if none matches
+        }
+      );
+  
+      // Send success response
+      res.status(201).json({
+        message: "Delivery person details updated successfully",
+        rider: newRider,
+      });
+    } catch (error) {
+      console.error("Error saving delivery person details:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+  
+
 
   // Endpoint to get delivery person details by phone number
 const getDeliveryPersonDetails = async (req, res) => {
@@ -435,5 +482,6 @@ module.exports = {
     resetPasswordConfirm,
     verifyDocument,
     getDeliveryPersonDetails,
+    RiderToPostDetails,
     verifyDeliveryPerson
 };

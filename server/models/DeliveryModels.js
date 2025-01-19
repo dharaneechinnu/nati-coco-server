@@ -36,6 +36,8 @@ const DeliveryPersonSchema = new mongoose.Schema(
     otpExpire: {
       type: Date,
     },
+    rcDocument:[String],
+
     aadharcard: {
       type: String, // Changed to String to accommodate Aadhar card number with optional leading zeros
     },
@@ -45,6 +47,7 @@ const DeliveryPersonSchema = new mongoose.Schema(
     driving: {
       type: String, // Kept String as it is likely to hold file paths or IDs
     },
+   
   },
   { timestamps: true } // Added missing comma before this line
 );

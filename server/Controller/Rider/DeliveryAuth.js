@@ -293,73 +293,80 @@ const resetPasswordConfirm = async (req, res) => {
     }
 };
 
-// Multer setup for document upload
+// Multer setup for single document upload (RC Document)
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadPath = path.join(__dirname, "../../verification-documents");
-      if (!fs.existsSync(uploadPath)) {
-        fs.mkdirSync(uploadPath, { recursive: true });
-      }
-      cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-      cb(null, `${uniqueSuffix}-${file.originalname}`);
-    },
-  });
-  
-  // Multer file filter for allowed file types (PDF, JPG, PNG)
-  const fileFilter = (req, file, cb) => {
-    const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png"];
-    if (allowedMimeTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Invalid file type"), false);
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, "../../verification-documents");
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
     }
-  };
-  
-  // Create the multer upload instance with multiple files
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  },
+});
 
-  const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-  }).array('documents', 3); // 'documents' is the key in the form-data, and 3 is the max number of files.
-  
-  // Endpoint to verify documents
-  const verifyDocument = (req, res) => {
-    upload(req, res, async (err) => {
-      if (err instanceof multer.MulterError) {
-        return res.status(400).json({ message: `Multer error: ${err.message}` });
-      } else if (err) {
-        return res.status(400).json({ message: err.message });
+// Multer file filter for allowed file types (PDF, JPG, PNG)
+const fileFilter = (req, file, cb) => {
+  const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png"];
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Invalid file type"), false);
+  }
+};
+
+// Create the multer upload instance for a single file
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+}).single("rcDocument"); // 'rcDocument' is the key in the form-data
+
+const uploadRcDocument = (req, res) => {
+  upload(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ message: `Multer error: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No RC document uploaded" });
+    }
+
+    // Successfully uploaded the RC document
+    const filePath = req.file.path; // Get the path of the uploaded file
+
+    // Save the RC document file path in the database
+    try {
+      // Ensure the correct key is being used for phonenumber in the body
+      const { phonenumber } = req.body;  // Make sure the phonenumber is passed correctly from the client-side
+
+      const deliveryPerson = await deliveryPersonModel.findOneAndUpdate(
+        { phonenumber: phonenumber },  // Use phonenumber from body
+        { $set: { rcDocument: filePath } },  // Save RC document path to the database
+        { new: true }
+      );
+
+      if (!deliveryPerson) {
+        return res.status(404).json({ message: "Delivery person not found" });
       }
-  
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ message: "No documents uploaded" });
-      }
-  
-      // Successfully uploaded the documents
-      const filePaths = req.files.map(file => file.path); // Get the paths of all uploaded files
-  
-      // Save file paths in the database
-      try {
-        const deliveryPerson = await deliveryPersonModel.findOneAndUpdate(
-          { phone: req.body.phone },
-          { $push: { documents: { $each: filePaths } } },  // Add the new file paths to the documents array
-          { new: true }
-        );
-  
-        return res.status(200).json({
-          message: "Documents uploaded successfully",
-          filePaths: filePaths,
-          deliveryPerson: deliveryPerson,  // Optionally return the updated delivery person object
-        });
-      } catch (error) {
-        console.error('Error updating delivery person:', error);
-        res.status(500).json({ message: 'Error saving document details' });
-      }
-    });
-  };
+
+      return res.status(200).json({
+        message: "RC document uploaded successfully",
+        filePath: filePath,
+        deliveryPerson: deliveryPerson, // Optionally return the updated delivery person object
+      });
+    } catch (error) {
+      console.error("Error updating delivery person:", error);
+      res.status(500).json({ message: "Error saving RC document details" });
+    }
+  });
+};
+
+
   
   const RiderToPostDetails = async (req, res) => {
     try {
@@ -410,38 +417,33 @@ const storage = multer.diskStorage({
   
 
 
-  // Endpoint to get delivery person details by phone number
-const getDeliveryPersonDetails = async (req, res) => {
-    try {
-      const { phonenumber } = req.params;
+  const getRcDocument = async (req, res) => {
+    const { phonenumber } = req.params;  // Extract phonenumber from URL params
   
-      // Find the delivery person in the database
+    try {
+      // Find the delivery person by phonenumber
       const deliveryPerson = await deliveryPersonModel.findOne({ phonenumber: phonenumber });
   
       if (!deliveryPerson) {
         return res.status(404).json({ message: "Delivery person not found" });
       }
   
-      // Include file paths in the response (assuming they are stored in an array called "documentPaths" in the DB)
-      const documents = deliveryPerson.documents || []; // Adjust based on your model
+      // Check if RC document exists
+      if (!deliveryPerson.rcDocument) {
+        return res.status(404).json({ message: "RC document not found" });
+      }
   
+      // Successfully found the RC document
       return res.status(200).json({
-        message: "Delivery person details retrieved successfully",
-        deliveryPerson: {
-          name: deliveryPerson.name,
-          phone: deliveryPerson.phonenumber,
-          email: deliveryPerson.email,
-          isVerified: deliveryPerson.isVerified,
-          documents: documents, // Add document paths here
-        },
+        message: "RC document retrieved successfully",
+        rcDocument: deliveryPerson.rcDocument,  // Send the file path or URL
       });
     } catch (error) {
-      console.error('Error fetching delivery person details:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      console.error("Error retrieving RC document:", error);
+      res.status(500).json({ message: "Error retrieving RC document" });
     }
   };
   
-
   // Endpoint to mark delivery person as verified
 const verifyDeliveryPerson = async (req, res) => {
     try {
@@ -480,8 +482,8 @@ module.exports = {
     verifyOtp,
     resetPassword,
     resetPasswordConfirm,
-    verifyDocument,
-    getDeliveryPersonDetails,
+    uploadRcDocument,
+    getRcDocument,
     RiderToPostDetails,
     verifyDeliveryPerson
 };

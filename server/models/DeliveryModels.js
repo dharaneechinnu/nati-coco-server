@@ -12,7 +12,9 @@ const DeliveryPersonSchema = new mongoose.Schema(
     },
     email:{
       type:String,
-     
+    },
+    password:{
+      type:String,
     },
     phonenumber:{
       type:String,

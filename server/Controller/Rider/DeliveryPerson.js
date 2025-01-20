@@ -1,7 +1,10 @@
 const DeliveryPerson = require("../../models/DeliveryModels");
 const mongoose = require('mongoose')
+const User = require("../../models/UserModel");
 const Order = require("../../models/Ordermodels");
+const Store = require("../../models/CityOwnerModel");
 const geolib = require("geolib");
+
 
 // Find and assign the nearest delivery person
 const findNearestDeliveryPerson = async (req, res) => {
@@ -131,45 +134,45 @@ const getDeliveryPersonLocation = async (req, res) => {
 };
 
 // Update Delivery Status
-const updateDeliveryStatus = async (req, res) => {
-  const { deliveryPersonId, orderId, status } = req.body;
+// const updateDeliveryStatus = async (req, res) => {
+//   const { deliveryPersonId, orderId, status } = req.body;
 
-  try {
-    // Validate input
-    if (!deliveryPersonId || !orderId || !status) {
-      return res.status(400).json({ message: "All fields are required: deliveryPersonId, orderId, and status." });
-    }
+//   try {
+//     // Validate input
+//     if (!deliveryPersonId || !orderId || !status) {
+//       return res.status(400).json({ message: "All fields are required: deliveryPersonId, orderId, and status." });
+//     }
 
-    // Validate status
-    const validStatuses = ["Pending", "Assigned", "Picked Up", "On the Way", "Delivered"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status value." });
-    }
+//     // Validate status
+//     const validStatuses = ["Pending", "Assigned", "Picked Up", "On the Way", "Delivered"];
+//     if (!validStatuses.includes(status)) {
+//       return res.status(400).json({ message: "Invalid status value." });
+//     }
 
-    // Find the order
-    const order = await Order.findOne({ orderId });
-    if (!order) {
-      return res.status(404).json({ message: "Order not found." });
-    }
+//     // Find the order
+//     const order = await Order.findOne({ orderId });
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found." });
+//     }
 
-    // Check if the delivery person is assigned to the order
-    if (String(order.deliveryPersonId) !== String(deliveryPersonId)) {
-      return res.status(403).json({ message: "You are not assigned to this order." });
-    }
+//     // Check if the delivery person is assigned to the order
+//     if (String(order.deliveryPersonId) !== String(deliveryPersonId)) {
+//       return res.status(403).json({ message: "You are not assigned to this order." });
+//     }
 
-    // Update the order status
-    order.status = status;
-    await order.save();
+//     // Update the order status
+//     order.status = status;
+//     await order.save();
 
-    res.status(200).json({
-      message: "Order status updated successfully.",
-      order,
-    });
-  } catch (error) {
-    console.error("Error updating delivery status:", error);
-    res.status(500).json({ message: "Internal Server Error." });
-  }
-};
+//     res.status(200).json({
+//       message: "Order status updated successfully.",
+//       order,
+//     });
+//   } catch (error) {
+//     console.error("Error updating delivery status:", error);
+//     res.status(500).json({ message: "Internal Server Error." });
+//   }
+// };
 
 // Fetch order history for delivered orders
 const getOrderHistory = async (req, res) => {
@@ -211,5 +214,151 @@ const getOrderHistory = async (req, res) => {
   }
 };
 
+const updateRiderAvailability = async (req, res) => {
+  try {
+    const { availability } = req.body;
+    const riderId = req.params.id;
 
-module.exports={updateLocation,getDeliveryPersonLocation,findNearestDeliveryPerson, updateDeliveryStatus, getOrderHistory}
+    const updatedRider = await DeliveryPerson.findByIdAndUpdate(
+      riderId,
+      { availability },
+      { new: true }
+    );
+
+    if (!updatedRider) {
+      return res.status(404).json({ message: 'Rider not found' });
+    }
+
+    res.status(200).json(updatedRider);
+  } catch (error) {
+    console.error('Error updating rider availability:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const getDeliveryOrders = async (req, res) => {
+  try {
+    const { deliveryPersonId } = req.params;
+    
+    const orders = await Order.find({ 
+      deliveryPersonId,
+      status: { $ne: 'REJECTED' } // Exclude rejected orders
+    })
+    .populate('userId', 'name phone') // Get customer details
+    .populate('storeId', 'name address')
+    .sort({ createdAt: -1 }); // Most recent first
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error('Error fetching delivery orders:', error);
+    res.status(500).json({ message: 'Error fetching orders' });
+  }
+};
+
+const updateDeliveryStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, location } = req.body;
+
+    const updateData = {
+      status,
+      ...(location && { location }),
+    };
+
+    // Add timestamps based on status
+    switch (status) {
+      case 'COMPLETED':
+        updateData.completedAt = new Date();
+        break;
+      case 'PREPARING':
+        updateData.preparingStartedAt = new Date();
+        break;
+      case 'READY':
+        updateData.readyAt = new Date();
+        break;
+      case 'REJECTED':
+        updateData.rejectedAt = new Date();
+        updateData.rejectionReason = req.body.rejectionReason;
+        break;
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      updateData,
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.status(200).json(order);
+  } catch (error) {
+    console.error('Error updating delivery status:', error);
+    res.status(500).json({ message: 'Error updating status' });
+  }
+};
+
+const getDeliveryLocation = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    // Check if orderId is provided
+    if (!orderId) {
+      return res.status(400).json({ message: 'Order ID is required' });
+    }
+
+    // Fetch the order by orderId
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Fetch the store details
+    console.log(order.storeId);
+    const store = await Store.findOne({ _id: order.storeId }).select('locations name');
+    console.log(store);
+
+    if (!store || !store.locations) {
+      return res.status(404).json({ message: 'Store or location not found' });
+    }
+
+    // Construct the store location object
+    const storeLocation = {
+      latitude: store.locations.latitude,
+      longitude: store.locations.longitude,
+      name: store.name,
+    };
+
+    // Construct the customer location object, if delivery OTP is verified
+    let customerLocation = null;
+    if (order.deliveryOTP) {
+      const user = await User.findById(order.userId).select('location name address');
+
+      if (!user || !user.location) {
+        return res.status(404).json({ message: 'User or location not found' });
+      }
+
+      customerLocation = {
+        latitude: user.location.latitude,
+        longitude: user.location.longitude,
+        name: user.name,
+        address: user.address,
+      };
+    }
+
+    // Return the response
+    return res.status(200).json({
+      storeLocation,
+      customerLocation,
+    });
+  } catch (error) {
+    console.error('Error fetching delivery location:', error);
+    res.status(500).json({ message: 'Error fetching location details' });
+  }
+};
+
+
+
+module.exports={updateLocation,getDeliveryOrders,getDeliveryLocation,updateDeliveryStatus,getDeliveryPersonLocation,findNearestDeliveryPerson,updateRiderAvailability, updateDeliveryStatus, getOrderHistory}

@@ -102,7 +102,7 @@ app.use('/citystore',require('./router/ChickenStoreRouter'))
 
 app.use('/Adminstore/delivery', DelPersonRouter);
 
-
+app.use('/location',require('./router/LocationRouter'));
 
 
 

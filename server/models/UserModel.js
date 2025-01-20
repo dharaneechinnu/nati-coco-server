@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  location: {
+    latitude: { type: Number, required: true ,default:13.1271},
+    longitude: { type: Number, required: true ,default:78.6569},
+  },
 });
 
 const userModel = mongoose.model('UsersLogins', userSchema);

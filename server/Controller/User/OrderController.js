@@ -444,11 +444,73 @@ const verifyAndComplete = async (req, res) => {
   }
 };
 
+
+const getOrderByOrderId = async (req, res) => {
+  try {
+      const { orderId } = req.body;
+
+      // Check if the orderId is provided
+      if (!orderId) {
+          return res.status(400).json({ message: "Order ID is required" });
+      }
+
+      // Fetch the order details from the Order model, populating the delivery person details
+      const order = await Order.findOne({ orderId }).populate('deliveryPersonId');
+
+      // If the order doesn't exist, return a 404 error
+      if (!order) {
+          return res.status(404).json({ message: "Order not found" });
+      }
+
+      // Fetch the delivery person details using the deliveryPersonId from the order
+      const deliveryPerson = order.deliveryPersonId;
+
+      // Return both order and delivery person details
+      return res.status(200).json({
+          message: "Order and delivery person details fetched successfully",
+          order: {
+              orderId: order.orderId,
+              userId: order.userId,
+              storeId: order.storeId,
+              items: order.items,
+              amount: order.amount,
+              paymentStatus: order.paymentStatus,
+              status: order.status,
+              storeLocation: order.storeLocation,
+              deliveryLocation: order.deliveryLocation,
+              deliveryDistance: order.deliveryDistance,
+              deliveryOTP: order.deliveryOTP,
+              completedAt: order.completedAt,
+              rejectedAt: order.rejectedAt,
+              rejectionReason: order.rejectionReason,
+              preparingStartedAt: order.preparingStartedAt,
+              readyAt: order.readyAt,
+          },
+          deliveryPerson: {
+              id: deliveryPerson._id,
+              name: deliveryPerson.name,
+              email: deliveryPerson.email,
+              phoneNumber: deliveryPerson.phoneNumber,
+              isVerified: deliveryPerson.isVerified,
+              availability: deliveryPerson.availability,
+          }
+      });
+  } catch (error) {
+      console.error("Error fetching order and delivery person:", error);
+      return res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+
+
+
+
 module.exports = {
     createOrder,
     findNearestStoreAndDisplayMenu,
     getOrderAnalytics,
     markOrderReadyAndAssignDelivery,
     verifyAndComplete,
-    getMyOrders
+    getMyOrders,
+    getOrderByOrderId
 };

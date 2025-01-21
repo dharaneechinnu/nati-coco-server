@@ -112,6 +112,46 @@ const addMenuItem = async (req, res) => {
   });
 };
 
+//store open or close
+// controllers/storeController.js
+const updateStoreAvailability = async (req, res) => {
+  try {
+    const { storeId, isOpen } = req.body;
+
+    if (!storeId || isOpen === undefined) {
+      return res.status(400).json({ success: false, message: 'Store ID and status are required' });
+    }
+
+    // Simulating a database update (replace with actual DB logic)
+    const updatedStore = await CityStore.findByIdAndUpdate(
+      storeId,
+      { isOpen },
+      { new: true }
+    );
+
+    if (!updatedStore) {
+      return res.status(404).json({ success: false, message: 'Store not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Store availability updated successfully',
+      store: updatedStore,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating store availability',
+      error: error.message,
+    });
+  }
+};
+
+module.exports = {
+  updateStoreAvailability,
+};
+
+
 // Update Menu Item by ID with Image Upload
 const updateMenuItem = async (req, res) => {
   upload.single('image')(req, res, async (err) => {
@@ -120,7 +160,7 @@ const updateMenuItem = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { category, subCategory, itemName, description, price, availability } = req.body;
+    const { category, subCategory, itemName, description, price, availability,newArrival,BestSeller,stock } = req.body;
     const image = req.file ? `/ImageStore/${req.file.filename}` : null;
 
     try {
@@ -131,6 +171,9 @@ const updateMenuItem = async (req, res) => {
         description,
         price,
         availability,
+        newArrival,
+        BestSeller,
+        stock,
       };
 
       if (image) updateData.image = image;
@@ -214,30 +257,6 @@ const getMenuItems = async (req, res) => {
   }
 };
 
-// Add Delivery Person
-const addDeliveryPerson = async (req, res) => {
-  try {
-    const { name, deliveryPersonId } = req.body;
-
-    if (!name || !deliveryPersonId) {
-      return res.status(400).json({ message: "Name and deliveryPersonId are required." });
-    }
-
-    const existingPerson = await DeliveryPerson.findOne({ deliveryPersonId });
-    if (existingPerson) {
-      return res.status(400).json({ message: "Delivery person with this ID already exists." });
-    }
-
-    const newPerson = await DeliveryPerson.create({ name, deliveryPersonId });
-    res.status(201).json({
-      message: "Delivery person added successfully.",
-      deliveryPerson: newPerson,
-    });
-  } catch (error) {
-    console.error("Error adding delivery person:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
 
 // Get Delivery Persons
 const getDeliveryPersons = async (req, res) => {
@@ -305,9 +324,9 @@ module.exports = {
   updateMenuItem, 
   deleteMenuItem, 
   getMenuItems, 
-  addDeliveryPerson, 
   getDeliveryPersons, 
   getOrders,
   getMenuItemsByCategory,
-  updateOrder
+  updateOrder,
+  updateStoreAvailability
 };

@@ -1,8 +1,10 @@
 const Order = require("../../models/Ordermodels");
 const Store = require('../../models/CityOwnerModel');
+const DeliveryPerson = require('../../models/DeliveryModels');
 const MenuModels = require('../../models/MenuModel');
 const geolib = require('geolib'); // Added missing geolib import
 const mongoose = require("mongoose");
+const crypto = require('crypto');
 
 const generateUniqueOrderId = async () => {
   const maxAttempts = 10;
@@ -254,8 +256,199 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
   }
 };
 
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // Generates a 6-digit OTP
+};
+
+const markOrderReadyAndAssignDelivery = async (req, res) => {
+  try {
+    const { orderId, storeId } = req.body;
+
+    // Validate inputs
+    if (!orderId || !storeId) {
+      return res.status(400).json({ error: 'Order ID and Store ID are required' });
+    }
+
+    // Fetch store details
+    const store = await Store.findById(storeId);
+    if (!store || !store.locations || !store.locations.latitude || !store.locations.longitude) {
+      return res.status(404).json({ message: 'Store not found or has invalid location' });
+    }
+
+    const storeLocation = {
+      latitude: store.locations.latitude,
+      longitude: store.locations.longitude,
+    };
+
+    // Fetch all available delivery persons
+    const availableDeliveryPersons = await DeliveryPerson.find({ availability: true });
+    if (!availableDeliveryPersons.length) {
+      return res.status(404).json({ message: 'No available delivery persons found' });
+    }
+
+    // Calculate distances to store and filter within range (20 km)
+    const maxDistance = 20000; // 20 km in meters
+    const deliveryPersonsInRange = availableDeliveryPersons
+      .map(person => {
+        if (!person.location || !person.location.latitude || !person.location.longitude) {
+          return null;  // Skip persons without a location
+        }
+
+        const deliveryPersonLocation = {
+          latitude: person.location.latitude,
+          longitude: person.location.longitude,
+        };
+
+        const distanceToStore = geolib.getDistance(storeLocation, deliveryPersonLocation);
+        return distanceToStore <= maxDistance
+          ? { person, distance: distanceToStore }
+          : null;
+      })
+      .filter(Boolean);  // Filter out null values
+
+    if (!deliveryPersonsInRange.length) {
+      return res.status(404).json({ message: 'No delivery persons available within range' });
+    }
+
+    // Find the nearest delivery person
+    const nearestDeliveryPerson = deliveryPersonsInRange.reduce((closest, current) =>
+      !closest || current.distance < closest.distance ? current : closest, null
+    );
+
+    if (!nearestDeliveryPerson) {
+      return res.status(404).json({ message: 'Unable to assign a delivery person' });
+    }
+
+    console.log('Nearest delivery person:', nearestDeliveryPerson.person.name);
+
+    // Mark the order as ready and assign the delivery person
+    const order = await Order.findOne({ orderId });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Generate and save the OTP for the order
+    const otp = generateOTP();
+    order.deliveryOTP = otp;  // Save the generated OTP in the order document
+    order.status = 'READY';
+    order.deliveryPersonId = nearestDeliveryPerson.person._id; // Assigning ObjectId correctly
+    await order.save();
+    console.log('Order updated:', order);
+
+    // Update the delivery person's availability to false (no longer available)
+    nearestDeliveryPerson.person.availability = false;
+    await nearestDeliveryPerson.person.save();
+    console.log('Updated delivery person availability:', nearestDeliveryPerson.person.name);
+
+    // Respond with success and delivery details, including OTP
+    res.status(200).json({
+      message: 'Order marked as ready and delivery person assigned',
+      orderId: order._id,
+      deliveryPerson: {
+        id: nearestDeliveryPerson.person._id,
+        name: nearestDeliveryPerson.person.name,
+        distance: `${(nearestDeliveryPerson.distance / 1000).toFixed(2)} km`,  // Distance in km
+      },
+      OTP: order.deliveryOTP,  // Include OTP in the response
+    });
+  } catch (error) {
+    console.error('Error marking order ready and assigning delivery:', error);
+    res.status(500).json({
+      error: 'An error occurred while processing your request',
+      details: error.message,
+    });
+  }
+};
+
+const getMyOrders = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID format" });
+    }
+
+    // Fetch orders from DB
+    const orders = await Order.find({ userId })
+      .populate("storeId", "name locations") // Fetch store details
+      .sort({ createdAt: -1 }); // Sort by latest order first
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ success: false, message: "No orders found for this user" });
+    }
+
+    // Format orders for better response
+    const formattedOrders = orders.map((order) => ({
+      orderId: order.orderId,
+      status: order.status,
+      totalAmount: order.amount,
+      paymentStatus: order.paymentStatus,
+      orderDate: order.createdAt.toLocaleString(),
+      store: {
+        name: order.storeId?.name || "Unknown Store",
+        location: order.storeId?.locations || "Not Available",
+      },
+      items: order.items.map((item) => ({
+        name: item.itemName || "Unknown Item",
+        price: item.price || 0,
+        quantity: item.quantity,
+      })),
+      deliveryOTP: order.deliveryOTP,
+      timestamps: {
+        preparingStartedAt: order.preparingStartedAt,
+        readyAt: order.readyAt,
+        completedAt: order.completedAt,
+        rejectedAt: order.rejectedAt,
+        rejectionReason: order.rejectionReason,
+      },
+    }));
+
+    res.status(200).json({ success: true, orders: formattedOrders });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ success: false, message: "Error fetching orders", error: error.message });
+  }
+};
+
+const verifyAndComplete = async (req, res) => {
+  try {
+    const { orderId, otp } = req.body;
+
+    const order = await Order.findOne({ orderId: orderId });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Verify OTP
+    if (order.deliveryOTP !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    // Check if OTP is expired (optional: OTP valid for 1 hour)
+    const otpAge = (new Date() - new Date(order.otpGeneratedAt)) / 1000 / 60 / 60; // hours
+    if (otpAge > 1) {
+      return res.status(400).json({ success: false, message: 'OTP expired' });
+    }
+
+    // Update order status
+    order.status = 'COMPLETED';
+    order.completedAt = new Date();
+    await order.save();
+
+    res.json({ success: true, message: 'Order completed successfully' });
+  } catch (error) {
+    console.error('Error verifying and completing order:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
     createOrder,
     findNearestStoreAndDisplayMenu,
-    getOrderAnalytics
+    getOrderAnalytics,
+    markOrderReadyAndAssignDelivery,
+    verifyAndComplete,
+    getMyOrders
 };

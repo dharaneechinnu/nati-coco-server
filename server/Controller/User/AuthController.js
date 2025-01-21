@@ -111,7 +111,7 @@ const getOtp = async (req, res) => {
         // Configure options for TextFlow's OTP generation
         const verificationOptions = {
             sender: 'MyCompany',                       // Replace with your sender ID or phone number
-            message: `Your verification code is {otp}`,  // TextFlow replaces {otp} with the actual OTP
+            message: `Your verifications code is {otp}`,  // TextFlow replaces {otp} with the actual OTP
             expires: 3600                              // OTP expires in 1 hour (3600 seconds)
         };
  

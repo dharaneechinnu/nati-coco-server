@@ -34,45 +34,8 @@ const paymentSchema = new mongoose.Schema(
       default: Date.now,
     },
   },
-<<<<<<< HEAD
-  razorpayOrderId: {
-    type: String,
-    required: true
-  },
-  razorpayPaymentId: {
-    type: String
-  },
-  amount: {
-    type: Number,
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['PENDING', 'SUCCESS', 'FAILED'],
-    default: 'PENDING'
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  items: [{
-    productId: String,
-    quantity: Number,
-    price: Number
-  }],
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date
-  }
-});
-=======
   { timestamps: true }
 );
 
->>>>>>> f75e115691b3fb7352480061f821c720cee01fa2
 
 module.exports = mongoose.model('Payment', paymentSchema);

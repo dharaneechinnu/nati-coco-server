@@ -8,7 +8,7 @@ router.patch('/live-location',PostUserLiveLocation);
 router.get('/live-location/:userId', GetLiveLocation);
 
 router.post('/address',postUserAddress);
-router.get('/address',getUserAddresses);
+router.get('/address/:userId',getUserAddresses);
 
 router.get('/deliveryPerson/:id/orderHistory', getOrderHistory);
 

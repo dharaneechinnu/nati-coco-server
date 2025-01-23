@@ -360,5 +360,6 @@ const getDeliveryLocation = async (req, res) => {
 };
 
 
+ 
 
 module.exports={updateLocation,getDeliveryOrders,getDeliveryLocation,updateDeliveryStatus,getDeliveryPersonLocation,findNearestDeliveryPerson,updateRiderAvailability, updateDeliveryStatus, getOrderHistory}

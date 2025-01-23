@@ -233,6 +233,9 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
       availability: true
     });
 
+
+    const storlocation = await Store.findById(nearestStore.id);
+
     if (!storeMenu.length) {
       return res.status(404).json({ message: 'No menu items available at the nearest store' });
     }
@@ -244,6 +247,7 @@ const findNearestStoreAndDisplayMenu = async (req, res) => {
         ...item._doc,
         image: `http://${req.headers.host}/ImageStore/${item.image}`, // Ensure correct path
       })),
+      StoreLocations:storlocation
     });
     
     

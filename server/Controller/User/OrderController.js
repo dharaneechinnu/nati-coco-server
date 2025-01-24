@@ -31,25 +31,35 @@ const generateUniqueOrderId = async () => {
   return orderId;
 };
 
+// Create order endpoint
 const createOrder = async (req, res) => {
   try {
-    const { userId, storeId, items, amount, paymentStatus, deliveryPersonId, location } = req.body;
+    const {
+      userId,
+      storeId,
+      items,
+      amount,
+      paymentStatus,
+      deliveryPersonId,
+      storeLocation,
+      deliveryLocation,
+    } = req.body;
 
     console.log("Incoming Order Data:", req.body);
 
     // Validate required fields
-    if (!userId || !amount || !paymentStatus) {
+    if (!userId || !amount || !paymentStatus || !storeId || !items) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    // Validate `userId` as an ObjectId
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid userId format." });
+    // Validate `userId` and `storeId` as ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(storeId)) {
+      return res.status(400).json({ message: "Invalid userId or storeId format." });
     }
 
     const orderId = await generateUniqueOrderId();
 
-    const newOrder = await Order.create({
+    const newOrder = await OrderModel.create({
       userId,
       storeId,
       items,
@@ -57,7 +67,9 @@ const createOrder = async (req, res) => {
       orderId,
       paymentStatus,
       deliveryPersonId: deliveryPersonId || null,
-      location: location || { latitude: null, longitude: null },
+      storeLocation,
+      deliveryLocation,
+      deliveryDistance: calculateDistance(storeLocation, deliveryLocation),
     });
 
     res.status(201).json({ message: "Order created successfully", order: newOrder });
@@ -66,6 +78,26 @@ const createOrder = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error", error });
   }
 };
+
+// Helper function to calculate distance (Haversine formula)
+const calculateDistance = (start, end) => {
+  const toRadians = (degree) => (degree * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+
+  const dLat = toRadians(end.latitude - start.latitude);
+  const dLon = toRadians(end.longitude - start.longitude);
+
+  const lat1 = toRadians(start.latitude);
+  const lat2 = toRadians(end.latitude);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadiusKm * c;
+};
+
 
 
 const getOrderAnalytics = async (req, res) => {

@@ -98,7 +98,7 @@ const addMenuItem = async (req, res) => {
         description,
         price,
         availability,
-        image: `/ImageStore/${req.file.filename}`, // Save image path
+        image: `${req.file.filename}`, // Save image path
       });
 
       res.status(201).json({

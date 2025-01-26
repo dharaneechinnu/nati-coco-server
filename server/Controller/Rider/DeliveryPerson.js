@@ -299,6 +299,7 @@ const updateDeliveryStatus = async (req, res) => {
   }
 };
 
+
 const getDeliveryLocation = async (req, res) => {
   try {
     const { orderId } = req.body;
@@ -315,10 +316,8 @@ const getDeliveryLocation = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Fetch the store details
-    console.log(order.storeId);
-    const store = await Store.findOne({ _id: order.storeId }).select('locations name');
-    console.log(store);
+    // Fetch the store details using the storeId from the order
+    const store = await Store.findById(order.storeId).select('locations name');
 
     if (!store || !store.locations) {
       return res.status(404).json({ message: 'Store or location not found' });
@@ -331,15 +330,19 @@ const getDeliveryLocation = async (req, res) => {
       name: store.name,
     };
 
-    // Construct the customer location object, if delivery OTP is verified
+    // Initialize the customer location object
     let customerLocation = null;
+
+    // Check if the order has a verified delivery OTP
     if (order.deliveryOTP) {
+      // Fetch the user's details using the userId from the order
       const user = await User.findById(order.userId).select('location name address');
 
       if (!user || !user.location) {
         return res.status(404).json({ message: 'User or location not found' });
       }
 
+      // Construct the customer location object
       customerLocation = {
         latitude: user.location.latitude,
         longitude: user.location.longitude,
@@ -348,7 +351,7 @@ const getDeliveryLocation = async (req, res) => {
       };
     }
 
-    // Return the response
+    // Return the store and customer location
     return res.status(200).json({
       storeLocation,
       customerLocation,
@@ -358,6 +361,7 @@ const getDeliveryLocation = async (req, res) => {
     res.status(500).json({ message: 'Error fetching location details' });
   }
 };
+
 
 
  

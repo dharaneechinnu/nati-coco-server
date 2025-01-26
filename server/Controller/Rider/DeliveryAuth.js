@@ -14,8 +14,8 @@ textflow.useKey('JvlPkiAbXej0ZfoTibTeivyehdibSWaRHyEE6VeeNQbmnYmGqcI1y4HtdFy1x6I
 // Login delivery person
 const DeliverypersonLogin = async (req, res) => {
     try {
-        const { phonenumber, password } = req.body;
-
+        const riderlogin = { phonenumber, password } = req.body;
+console.log(riderlogin)
         if (!phonenumber || !password) {
             return res.status(400).json({ message: 'Enter all fields' });
         }

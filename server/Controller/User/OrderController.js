@@ -40,7 +40,6 @@ const createOrder = async (req, res) => {
       items,
       amount,
       paymentStatus,
-      deliveryPersonId,
       storeLocation,
       deliveryLocation,
     } = req.body;
@@ -48,36 +47,44 @@ const createOrder = async (req, res) => {
     console.log("Incoming Order Data:", req.body);
 
     // Validate required fields
-    if (!userId || !amount || !paymentStatus || !storeId || !items) {
+    if (!userId || !storeId || !items || !amount || !paymentStatus) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    // Validate `userId` and `storeId` as ObjectId
+    // Validate `userId` and `storeId` as valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(storeId)) {
       return res.status(400).json({ message: "Invalid userId or storeId format." });
     }
 
+    // Generate unique order ID
     const orderId = await generateUniqueOrderId();
 
-    const newOrder = await OrderModel.create({
+    // Calculate delivery distance
+    const deliveryDistance = calculateDistance(storeLocation, deliveryLocation);
+
+    // Create a new order in the database
+    const newOrder = await Order.create({
       userId,
       storeId,
       items,
       amount,
       orderId,
       paymentStatus,
-      deliveryPersonId: deliveryPersonId || null,
       storeLocation,
       deliveryLocation,
-      deliveryDistance: calculateDistance(storeLocation, deliveryLocation),
+      deliveryDistance,
     });
 
-    res.status(201).json({ message: "Order created successfully", order: newOrder });
+    res.status(201).json({
+      message: "Order created successfully",
+      order: newOrder,
+    });
   } catch (error) {
     console.error("Error creating order:", error);
     res.status(500).json({ message: "Internal Server Error", error });
   }
 };
+
 
 // Helper function to calculate distance (Haversine formula)
 const calculateDistance = (start, end) => {
@@ -498,12 +505,44 @@ const getOrderByOrderId = async (req, res) => {
           return res.status(404).json({ message: "Order not found" });
       }
 
-      // Fetch the delivery person details using the deliveryPersonId from the order
-      const deliveryPerson = order.deliveryPersonId;
+      // If deliveryPersonId is populated, return both order and delivery person details
+      if (order.deliveryPersonId) {
+          const deliveryPerson = order.deliveryPersonId;
 
-      // Return both order and delivery person details
+          return res.status(200).json({
+              message: "Order and delivery person details fetched successfully",
+              order: {
+                  orderId: order.orderId,
+                  userId: order.userId,
+                  storeId: order.storeId,
+                  items: order.items,
+                  amount: order.amount,
+                  paymentStatus: order.paymentStatus,
+                  status: order.status,
+                  storeLocation: order.storeLocation,
+                  deliveryLocation: order.deliveryLocation,
+                  deliveryDistance: order.deliveryDistance,
+                  deliveryOTP: order.deliveryOTP,
+                  completedAt: order.completedAt,
+                  rejectedAt: order.rejectedAt,
+                  rejectionReason: order.rejectionReason,
+                  preparingStartedAt: order.preparingStartedAt,
+                  readyAt: order.readyAt,
+              },
+              deliveryPerson: {
+                  id: deliveryPerson._id,
+                  name: deliveryPerson.name,
+                  email: deliveryPerson.email,
+                  phoneNumber: deliveryPerson.phoneNumber,
+                  isVerified: deliveryPerson.isVerified,
+                  availability: deliveryPerson.availability,
+              }
+          });
+      }
+
+      // If deliveryPersonId is not found, return only order details
       return res.status(200).json({
-          message: "Order and delivery person details fetched successfully",
+          message: "Order details fetched successfully (without delivery person)",
           order: {
               orderId: order.orderId,
               userId: order.userId,
@@ -521,21 +560,15 @@ const getOrderByOrderId = async (req, res) => {
               rejectionReason: order.rejectionReason,
               preparingStartedAt: order.preparingStartedAt,
               readyAt: order.readyAt,
-          },
-          deliveryPerson: {
-              id: deliveryPerson._id,
-              name: deliveryPerson.name,
-              email: deliveryPerson.email,
-              phoneNumber: deliveryPerson.phoneNumber,
-              isVerified: deliveryPerson.isVerified,
-              availability: deliveryPerson.availability,
           }
       });
+
   } catch (error) {
       console.error("Error fetching order and delivery person:", error);
       return res.status(500).json({ message: "Internal server error", error });
   }
 };
+
 
 
 

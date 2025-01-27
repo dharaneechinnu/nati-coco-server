@@ -570,6 +570,29 @@ const getOrderByOrderId = async (req, res) => {
 };
 
 
+const getHelpOrderStoreDetails = async(req,res) =>{
+  try {
+      const {id} = req.body;
+
+      if(!id){
+       return res.status(400).json({message:"Id of the store is required"});
+      }
+
+        const StoreDetails = await Store.findById(id);
+        console.log(StoreDetails);
+
+      if(!StoreDetails){
+        return res.status(400).json({message:"StoreDetails Not found "});
+      }
+
+      return res.status(200).json({StoreDetails:StoreDetails});
+
+  } catch (error) {
+    console.log("Error in Fetching the Store Details : ",error);
+    return res.status(500).json({message:"Error in Fetching the Stoer Details"});
+  }
+}
+
 
 
 
@@ -581,5 +604,6 @@ module.exports = {
     markOrderReadyAndAssignDelivery,
     verifyAndComplete,
     getMyOrders,
-    getOrderByOrderId
+    getOrderByOrderId,
+    getHelpOrderStoreDetails
 };

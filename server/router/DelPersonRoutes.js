@@ -21,8 +21,8 @@ router.get('/:phonenumber', getRcDocument);
 router.put('/:phonenumber', verifyDeliveryPerson);
 
 
-
-router.get('/getDeliveryPerson',getDeliveryPersons);
+//check this
+router.post('/getDeliveryPerson',getDeliveryPersons);
 router.post("/update-location", updateLocation);
 router.get("/location/:orderId", getDeliveryPersonLocation);
 router.post("/find-nearest", findNearestDeliveryPerson);

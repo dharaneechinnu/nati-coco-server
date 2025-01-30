@@ -344,10 +344,9 @@ const getDeliveryLocation = async (req, res) => {
 
       // Construct the customer location object
       customerLocation = {
-        latitude: user.location.latitude,
-        longitude: user.location.longitude,
+        latitude: user.liveLocation.latitude,
+        longitude: user.liveLocation.longitude,
         name: user.name,
-        address: user.address,
       };
     }
 
@@ -362,8 +361,43 @@ const getDeliveryLocation = async (req, res) => {
   }
 };
 
+const fetchOtp = async (req, res) => {
+  const { orderId } = req.body; // Extract orderId from request parameters
 
+  if (!orderId) {
+    return res.status(400).json({ success: false, message: "Order ID is required." });
+  }
 
+  try {
+    // Find the order with the given orderId
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+
+    // Check if OTP is available
+    if (!order.deliveryOTP) {
+      return res.status(400).json({ success: false, message: "OTP has not been generated for this order." });
+    }
+
+    // Send OTP and additional order details
+    return res.status(200).json({
+      success: true,
+      message: "OTP fetched successfully.",
+      data: {
+        deliveryOTP: order.deliveryOTP,
+        orderId: order.orderId,
+        storeLocation: order.storeLocation,
+        deliveryLocation: order.deliveryLocation,
+        status: order.status,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching OTP:", error);
+    return res.status(500).json({ success: false, message: "Server error. Please try again later." });
+  }
+};
  
 
-module.exports={updateLocation,getDeliveryOrders,getDeliveryLocation,updateDeliveryStatus,getDeliveryPersonLocation,findNearestDeliveryPerson,updateRiderAvailability, updateDeliveryStatus, getOrderHistory}
+module.exports={updateLocation,getDeliveryOrders,fetchOtp,getDeliveryLocation,updateDeliveryStatus,getDeliveryPersonLocation,findNearestDeliveryPerson,updateRiderAvailability, updateDeliveryStatus, getOrderHistory}

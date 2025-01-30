@@ -1,5 +1,5 @@
 const express = require("express");
-const { updateLocation,getDeliveryOrders,getDeliveryLocation,getDeliveryPersonLocation,updateRiderAvailability,findNearestDeliveryPerson, updateDeliveryStatus, getOrderHistory } = require("../Controller/Rider/DeliveryPerson");
+const { updateLocation,getDeliveryOrders,getDeliveryLocation,getDeliveryPersonLocation,updateRiderAvailability,findNearestDeliveryPerson, updateDeliveryStatus, getOrderHistory,fetchOtp } = require("../Controller/Rider/DeliveryPerson");
 const {  getDeliveryPersons } = require("../Controller/ChickenStore/ChickenStoreController");
 const {DeliverypersonLogin,RiderToPostDetails,  DeliverypersonRegister,sendOtp,verifyOtp,resetPassword,resetPasswordConfirm,uploadRcDocument,getRcDocument,verifyDeliveryPerson } = require('../Controller/Rider/DeliveryAuth')
 const router = express.Router();
@@ -44,6 +44,8 @@ router.get('/orders/:deliveryPersonId', getDeliveryOrders);
 // Update order status
 router.patch('/order/:orderId/status', updateDeliveryStatus);
 
-router.get('/deliveryocation', getDeliveryLocation);
+router.post('/deliveryocation', getDeliveryLocation);
+
+router.post('/getOtp',fetchOtp)
 
 module.exports = router;

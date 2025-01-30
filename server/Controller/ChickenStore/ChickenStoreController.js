@@ -98,7 +98,7 @@ const addMenuItem = async (req, res) => {
         description,
         price,
         availability,
-        image: `/ImageStore/${req.file.filename}`, // Save image path
+        image: `${req.file.filename}`, // Save image path
       });
 
       res.status(201).json({
@@ -110,6 +110,7 @@ const addMenuItem = async (req, res) => {
       res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   });
+
 };
 
 //store open or close

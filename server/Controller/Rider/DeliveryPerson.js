@@ -353,8 +353,8 @@ const getDeliveryLocation = async (req, res) => {
 
     // Return the store and customer location
     return res.status(200).json({
-      storeLocation,
-      customerLocation,
+      StoreLocation:storeLocation,
+      CustomerLocation:customerLocation,
     });
   } catch (error) {
     console.error('Error fetching delivery location:', error);

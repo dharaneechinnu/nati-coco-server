@@ -375,8 +375,10 @@ const markOrderReadyAndAssignDelivery = async (req, res) => {
     order.deliveryOTP = otp;  // Save the generated OTP in the order document
     order.status = 'READY';
     order.deliveryPersonId = nearestDeliveryPerson.person._id; // Assigning ObjectId correctly
+    order.otpGeneratedAt = new Date(); 
     await order.save();
     console.log('Order updated:', order);
+    
 
     // Update the delivery person's availability to false (no longer available)
     nearestDeliveryPerson.person.availability = false;

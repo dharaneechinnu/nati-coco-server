@@ -597,36 +597,7 @@ const getHelpOrderStoreDetails = async(req,res) =>{
 
 
 // Controller Function
-const PostPreOrder = async (req, res) => {
-  try {
-    const { userId, storeId, items, amount, paymentStatus, storeLocation, deliveryLocation, orderData, deliveryData } = req.body;
 
-    if (!userId || !storeId || !items || items.length === 0 || !amount || !storeLocation || !deliveryLocation) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-    const newPreOrder = new PreOrder({
-      orderId,
-      userId,
-      storeId,
-      items,
-      amount,
-      paymentStatus,
-      storeLocation,
-      deliveryLocation,
-      orderData,
-      deliveryData,
-    });
-
-    await newPreOrder.save();
-    return res.status(201).json({ message: "Pre-order created successfully", data: newPreOrder });
-  } catch (error) {
-    console.error("Error in posting the preorder: ", error);
-    return res.status(500).json({ message: "Error in posting preorder in DB" });
-  }
-};
 
 
 
@@ -639,5 +610,4 @@ module.exports = {
     getMyOrders,
     getOrderByOrderId,
     getHelpOrderStoreDetails,
-    PostPreOrder
 };

@@ -76,7 +76,7 @@ const postUserAddress = async (req, res) => {
     }
   };
 
-  const getUserAddresses = async (req, res) => {
+const getUserAddresses = async (req, res) => {
     try {
       const { userId } = req.params;
   

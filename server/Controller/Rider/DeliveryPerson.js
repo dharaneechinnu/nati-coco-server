@@ -332,23 +332,13 @@ const getDeliveryLocation = async (req, res) => {
 
     // Initialize the customer location object
     let customerLocation = null;
-
-    // Check if the order has a verified delivery OTP
-    if (order.deliveryOTP) {
-      // Fetch the user's details using the userId from the order
-      const user = await User.findById(order.userId).select('location name address');
-
-      if (!user || !user.location) {
-        return res.status(404).json({ message: 'User or location not found' });
-      }
-
-      // Construct the customer location object
-      customerLocation = {
-        latitude: user.liveLocation.latitude,
-        longitude: user.liveLocation.longitude,
-        name: user.name,
-      };
-    }
+    const user = await User.findById(order.userId)
+    console.log(user);
+    customerLocation = {
+      latitude: user.liveLocation.latitude,
+      longitude: user.liveLocation.longitude,
+      name: user.name,
+    };
 
     // Return the store and customer location
     return res.status(200).json({

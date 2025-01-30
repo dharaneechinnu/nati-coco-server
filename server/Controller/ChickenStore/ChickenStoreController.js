@@ -1,6 +1,7 @@
 const CityStore = require('../../models/CityOwnerModel');
 const MenuModels = require('../../models/MenuModel');
 const DeliveryPerson = require("../../models/DeliveryModels");
+const PreOrder = require('../../models/PreOrderModel');
 const Order = require('../../models/Ordermodels');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -317,6 +318,37 @@ const updateOrder = async (req, res) => {
   }
 };
 
+const PostPreOrder = async (req, res) => {
+  try {
+    const { userId, storeId, items, amount, paymentStatus, storeLocation, deliveryLocation, orderData, deliveryData } = req.body;
+    console.log({ userId, storeId, items, amount, paymentStatus, storeLocation, deliveryLocation });
+
+    if (!userId || !storeId || !items || items.length === 0 || !amount || !storeLocation || !deliveryLocation) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const newPreOrder = new PreOrder({
+      orderId,
+      userId,
+      storeId,
+      items,
+      amount,
+      paymentStatus,
+      storeLocation,
+      deliveryLocation,
+      orderData,
+      deliveryData,
+    });
+
+    await newPreOrder.save();
+    return res.status(201).json({ message: "Pre-order created successfully", data: newPreOrder });
+  } catch (error) {
+    console.error("Error in posting the preorder: ", error);
+    return res.status(500).json({ message: "Error in posting preorder in DB" });
+  }
+};
 
 
 module.exports = { 
@@ -329,5 +361,6 @@ module.exports = {
   getOrders,
   getMenuItemsByCategory,
   updateOrder,
-  updateStoreAvailability
+  updateStoreAvailability,
+  PostPreOrder
 };

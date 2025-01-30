@@ -99,3 +99,4 @@ const PreOrderSchema = new mongoose.Schema({
 });
 
 const PreOrder = mongoose.model('PreOrder', PreOrderSchema);
+module.exports = PreOrder;

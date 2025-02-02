@@ -478,7 +478,7 @@ const verifyAndComplete = async (req, res) => {
     }
 
     // Update order status
-    order.status = 'COMPLETED';
+    order.status = 'OUT_FOR_DELIVERY';
     order.completedAt = new Date();
     await order.save();
 

@@ -110,14 +110,15 @@ const updateLocation = async (req, res) => {
 
 const getDeliveryPersonLocation = async (req, res) => {
   const { orderId } = req.params;
-
+  const id = `ORD#${orderId}`;
   try {
     
-    const order = await Order.findOne({ orderId }).populate("deliveryPersonId");
-
+    const order = await Order.findOne({orderId : id}).populate("deliveryPersonId");
     if (order && order.deliveryPersonId) {
-     
-      const deliveryPerson = await DeliveryPerson.findOne({ deliveryPersonId: order.deliveryPersonId });
+
+      // const deliveryPerson = await DeliveryPerson.findOne({ deliveryPersonId: order.deliveryPersonId });
+      const deliveryPerson = order.deliveryPersonId;
+      // console.log(order.deliveryPersonId);
       if (deliveryPerson && deliveryPerson.location) {
         const locations= deliveryPerson.location;
         res.status(200).json(locations);

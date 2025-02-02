@@ -63,6 +63,10 @@ const OrderSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    userOTP:{
+      type:Number,
+      default:null
+    },
     otpGeneratedAt: {
       type: Date,
       default: null,

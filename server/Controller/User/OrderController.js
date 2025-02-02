@@ -595,12 +595,65 @@ const getHelpOrderStoreDetails = async(req,res) =>{
   }
 }
 
+const GeneratedUserOTP = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    // Validate orderId
+    if (!orderId) {
+      return res.status(400).json({ message: "Order ID is required" });
+    }
+
+    // Find the order by orderId
+    const order = await Order.findOne({orderId:orderId});
+
+    // Check if order exists
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Generate a 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000);
+
+    // Update the order with the generated OTP
+    order.userOTP = otp;
+    await order.save();
+
+    console.log("OTP generated and stored successfully");
+
+    return res.status(200).json({ message: "OTP generated successfully", otp });
+  } catch (error) {
+    console.error("Error in generating OTP: ", error);
+    return res.status(500).json({ message: "Error in generating OTP", error });
+  }
+};
 
 
 
-// Controller Function
 
+const GetUserOTP = async (req, res) => {
+  try {
+    const { orderId } = req.body;
 
+    // Validate orderId
+    if (!orderId) {
+      return res.status(400).json({ message: "Order ID is required" });
+    }
+
+    // Assuming Order is your Mongoose model
+    const order = await Order.findOne({ orderId: orderId }).select("userOTP");
+
+    // Check if order exists
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    return res.status(200).json({ message: "OTP retrieved successfully", otp: order.userOTP });
+  } catch (error) {
+    console.error("Error in getting OTP: ", error);
+    return res.status(500).json({ message: "Error in getting OTP", error });
+  }
+};
 
 
 module.exports = {
@@ -612,4 +665,6 @@ module.exports = {
     getMyOrders,
     getOrderByOrderId,
     getHelpOrderStoreDetails,
+    GeneratedUserOTP,
+    GetUserOTP
 };

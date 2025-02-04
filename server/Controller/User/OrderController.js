@@ -656,6 +656,70 @@ const GetUserOTP = async (req, res) => {
 };
 
 
+const PostPreOrder = async (req, res) => {
+  try {
+    const { userId, storeId, items, amount, paymentStatus, storeLocation, deliveryLocation } = req.body;
+
+    // Simple validation for required fields
+    if (!userId || !storeId || !items || !amount || !paymentStatus || !storeLocation || !deliveryLocation) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Generate a unique order ID (you can use a package like `uuid` or implement your own logic)
+    const orderId = `PO-${new Date().getTime()}`;
+
+    // Create a new preorder instance
+    const newPreOrder = new PreOrder({
+      orderId,
+      userId,
+      storeId,
+      items,
+      amount,
+      paymentStatus,
+      storeLocation,
+      deliveryLocation,
+      status: 'PENDING', // Initial status
+    });
+
+    // Save the preorder to the database
+    const savedPreOrder = await newPreOrder.save();
+
+    // Respond with the created preorder
+    return res.status(201).json({ message: 'Preorder created successfully', order: savedPreOrder });
+
+  } catch (error) {
+    console.log("Post Error: ", error);
+    return res.status(500).json({ message: "Post error", error });
+  }
+};
+
+
+const GetOrderByStoreId = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+
+    // Validate if storeId is provided
+    if (!storeId) {
+      return res.status(400).json({ message: 'Store ID is required' });
+    }
+
+    // Query to get orders based on storeId
+    const orders = await PreOrder.find({ storeId });
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found for this store' });
+    }
+
+
+    return res.status(200).json({ orders });
+
+  } catch (error) {
+    console.log("Get Error: ", error);
+    return res.status(500).json({ message: "Get error", error });
+  }
+};
+
+
 module.exports = {
     createOrder,
     findNearestStoreAndDisplayMenu,
@@ -666,5 +730,7 @@ module.exports = {
     getOrderByOrderId,
     getHelpOrderStoreDetails,
     GeneratedUserOTP,
-    GetUserOTP
+    GetUserOTP,
+    PostPreOrder,
+    GetOrderByStoreId
 };

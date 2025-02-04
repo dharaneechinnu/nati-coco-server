@@ -16,6 +16,7 @@ router.post('/postdetails',RiderToPostDetails)
 router.post('/rcdocument',uploadRcDocument)
 
 
+
 router.get('/:phonenumber', getRcDocument);
 // PUT route to mark delivery person as verified
 router.put('/:phonenumber', verifyDeliveryPerson);

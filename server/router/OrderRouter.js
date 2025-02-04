@@ -1,5 +1,5 @@
 const express = require("express");
-const { createOrder, getOrderAnalytics,verifyAndComplete,markOrderReadyAndAssignDelivery,getMyOrders,getOrderByOrderId } = require("../Controller/User/OrderController");
+const { createOrder,PostPreOrder,GetOrderByStoreId, getOrderAnalytics,verifyAndComplete,markOrderReadyAndAssignDelivery,getMyOrders,getOrderByOrderId } = require("../Controller/User/OrderController");
 
 const router = express.Router();
 
@@ -14,5 +14,7 @@ router.post('/verifyandcomplete', verifyAndComplete);
 router.get("/myorders/:userId", getMyOrders);
 router.post('/getorderId',getOrderByOrderId);
 
+router.post('/preorder',PostPreOrder)
 
+router.get('/getorder/:storeId',GetOrderByStoreId)
 module.exports = router;

@@ -481,7 +481,6 @@ const verifyAndComplete = async (req, res) => {
     order.status = 'OUT_FOR_DELIVERY';
     order.completedAt = new Date();
     await order.save();
-
     res.json({ success: true, message: 'Order completed successfully' });
   } catch (error) {
     console.error('Error verifying and completing order:', error);

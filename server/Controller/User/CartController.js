@@ -1,4 +1,6 @@
 const Cart = require("../../models/AddToCart");
+const mongoose = require("mongoose");
+
 
 const addToCart = async (req, res) => {
   const { userId, productId, quantity } = req.body;
@@ -33,22 +35,35 @@ const addToCart = async (req, res) => {
   }
 };
 
+
+
 const getCart = async (req, res) => {
+  console.log("Received userId:", req.params.userId); // Debug log
+
   const { userId } = req.params;
 
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
   try {
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
+    const objectUserId = new mongoose.Types.ObjectId(userId); // Explicit ObjectId conversion
+
+    const cart = await Cart.findOne({ userId: objectUserId }).populate("items.productId");
 
     if (cart) {
-      res.status(200).json(cart);
+      return res.status(200).json(cart);
     } else {
-      res.status(404).json({ message: "Cart not found!" });
+      return res.status(404).json({ message: "Cart not found!" });
     }
   } catch (error) {
     console.error("Error fetching cart:", error);
-    res.status(500).json({ message: "Internal Server Error!" });
+    return res.status(500).json({ message: "Internal Server Error!" });
   }
 };
+
+
+
 
 const removeFromCart = async (req, res) => {
   const { userId, productId } = req.body;

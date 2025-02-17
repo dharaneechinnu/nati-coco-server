@@ -206,7 +206,7 @@ const getOrderAnalytics = async (req, res) => {
 
 const findNearestStoreAndDisplayMenu = async (req, res) => {
   try {
-    const { latitude, longitude } = req.query;
+    const { latitude, longitude } = req.body;
 
     if (!latitude || !longitude) {
       return res.status(400).json({ error: 'Latitude and longitude are required' });

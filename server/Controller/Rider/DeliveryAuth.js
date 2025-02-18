@@ -420,27 +420,39 @@ const uploadRcDocument = (req, res) => {
   };
   
 
-
   const getRcDocument = async (req, res) => {
-    const { phonenumber } = req.params;  // Extract phonenumber from URL params
+    const { phonenumber } = req.params; // Extract phonenumber from URL params
   
     try {
-      // Find the delivery person by phonenumber
-      const deliveryPerson = await deliveryPersonModel.findOne({ phonenumber: phonenumber });
+      // Find the delivery person by phonenumber, excluding sensitive fields
+      const deliveryPerson = await deliveryPersonModel.findOne(
+        { phonenumber: phonenumber },
+        { password: 0, otpToken: 0, otpExpire: 0, availability: 0, __v: 0 } // Exclude unnecessary fields
+      );
   
       if (!deliveryPerson) {
         return res.status(404).json({ message: "Delivery person not found" });
       }
   
       // Check if RC document exists
-      if (!deliveryPerson.rcDocument) {
+      if (!deliveryPerson.rcDocument || deliveryPerson.rcDocument.length === 0) {
         return res.status(404).json({ message: "RC document not found" });
       }
   
-      // Successfully found the RC document
+      // Return only relevant details
       return res.status(200).json({
         message: "RC document retrieved successfully",
-        rcDocument: deliveryPerson.rcDocument,  // Send the file path or URL
+        riderDetails: {
+          deliverypersonId: deliveryPerson.deliverypersonId,
+          name: deliveryPerson.name,
+          email: deliveryPerson.email,
+          phonenumber: deliveryPerson.phonenumber,
+          isVerified: deliveryPerson.isVerified,
+          aadharcard: deliveryPerson.aadharcard,
+          driving: deliveryPerson.driving,
+          pancard: deliveryPerson.pancard,
+          rcDocument: deliveryPerson.rcDocument, // Path to the RC document
+        },
       });
     } catch (error) {
       console.error("Error retrieving RC document:", error);
@@ -478,7 +490,50 @@ const verifyDeliveryPerson = async (req, res) => {
     }
   };
   
-
+  const getVerifiedDeliveryPersons = async (req, res) => {
+    try {
+      const verifiedPersons = await deliveryPersonModel.find(
+        { isVerified: true },
+        { password: 0, otpToken: 0, otpExpire: 0, availability: 0, __v: 0 } // Hide sensitive fields
+      );
+  
+      // Check if the array is empty
+      if (!verifiedPersons) {
+        return res.status(404).json({ message: "No verified delivery persons found" });
+      }
+  
+      return res.status(200).json({
+        message: "Verified delivery persons fetched successfully",
+        data: verifiedPersons,
+      });
+    } catch (error) {
+      console.error("Error fetching verified delivery persons:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+  
+  
+  const getUnverifiedDeliveryPersons = async (req, res) => {
+    try {
+      const unverifiedPersons = await deliveryPersonModel.find(
+        { isVerified: false },
+        { password: 0, otpToken: 0, otpExpire: 0, availability: 0, __v: 0 } 
+      );
+  
+      if (!unverifiedPersons) {
+        return res.status(404).json({ message: "No unverified delivery persons found" });
+      }
+  
+      return res.status(200).json({
+        message: "Unverified delivery persons fetched successfully",
+        data: unverifiedPersons,
+      });
+    } catch (error) {
+      console.error("Error fetching unverified delivery persons:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+  
 module.exports = {
     DeliverypersonLogin,
     DeliverypersonRegister,
@@ -489,5 +544,7 @@ module.exports = {
     uploadRcDocument,
     getRcDocument,
     RiderToPostDetails,
-    verifyDeliveryPerson
+    verifyDeliveryPerson,
+    getVerifiedDeliveryPersons,
+    getUnverifiedDeliveryPersons
 };

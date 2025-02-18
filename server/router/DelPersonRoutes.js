@@ -1,7 +1,7 @@
 const express = require("express");
 const { updateLocation,getDeliveryOrders,getDeliveryLocation,getDeliveryPersonLocation,updateRiderAvailability,findNearestDeliveryPerson, updateDeliveryStatus, getOrderHistory,fetchOtp } = require("../Controller/Rider/DeliveryPerson");
 const {  getDeliveryPersons } = require("../Controller/ChickenStore/ChickenStoreController");
-const {DeliverypersonLogin,RiderToPostDetails,  DeliverypersonRegister,sendOtp,verifyOtp,resetPassword,resetPasswordConfirm,uploadRcDocument,getRcDocument,verifyDeliveryPerson } = require('../Controller/Rider/DeliveryAuth')
+const {DeliverypersonLogin,RiderToPostDetails,  DeliverypersonRegister,sendOtp,verifyOtp,resetPassword,resetPasswordConfirm,uploadRcDocument,getRcDocument,verifyDeliveryPerson,getVerifiedDeliveryPersons,getUnverifiedDeliveryPersons } = require('../Controller/Rider/DeliveryAuth')
 const router = express.Router();
 
 
@@ -18,6 +18,8 @@ router.post('/rcdocument',uploadRcDocument)
 
 
 router.get('/:phonenumber', getRcDocument);
+router.post('/riderverified',getVerifiedDeliveryPersons);
+router.post('/riderUnverified',getUnverifiedDeliveryPersons);
 // PUT route to mark delivery person as verified
 router.put('/:phonenumber', verifyDeliveryPerson);
 

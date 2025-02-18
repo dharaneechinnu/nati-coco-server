@@ -17,6 +17,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-fileupload": "^1.5.1",
     "geolib": "^3.3.4",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.11.17",

@@ -293,37 +293,42 @@ const resetPasswordConfirm = async (req, res) => {
     }
 };
 
-// Multer setup for single document upload (RC Document)
+
+
+// Ensure the folder exists, if not create it
+const uploadFolder = path.resolve(__dirname, 'verification-documents');
+if (!fs.existsSync(uploadFolder)) {
+  fs.mkdirSync(uploadFolder, { recursive: true }); // Creates the folder if it doesn't exist
+}
+
+// Set up Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, "../../verification-documents");
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
+    cb(null, uploadFolder); // Set the destination folder dynamically
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
+    cb(null, Date.now() + path.extname(file.originalname)); // Use a unique filename
   },
 });
 
-// Multer file filter for allowed file types (PDF, JPG, PNG)
+// File filter to allow only specific file types
 const fileFilter = (req, file, cb) => {
-  const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png"];
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+  if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type"), false);
+    cb(new Error('Invalid file type. Only JPG, PNG, and PDF allowed.'));
   }
 };
 
-// Create the multer upload instance for a single file
+// Configure Multer to handle the upload
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-}).single("rcDocument"); // 'rcDocument' is the key in the form-data
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB size limit
+}).single('rcDocument'); // Ensure the form-data field is named 'rcDocument'
 
+// The uploadRcDocument function
 const uploadRcDocument = (req, res) => {
   upload(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
@@ -339,14 +344,16 @@ const uploadRcDocument = (req, res) => {
     // Successfully uploaded the RC document
     const filePath = req.file.path; // Get the path of the uploaded file
 
-    // Save the RC document file path in the database
     try {
-      // Ensure the correct key is being used for phonenumber in the body
-      const { phonenumber } = req.body;  // Make sure the phonenumber is passed correctly from the client-side
+      const { phonenumber } = req.body;
+
+      if (!phonenumber) {
+        return res.status(400).json({ message: "Phone number is required" });
+      }
 
       const deliveryPerson = await deliveryPersonModel.findOneAndUpdate(
-        { phonenumber: phonenumber },  // Use phonenumber from body
-        { $set: { rcDocument: filePath } },  // Save RC document path to the database
+        { phonenumber },
+        { $set: { rcDocument: filePath } },
         { new: true }
       );
 
@@ -356,8 +363,8 @@ const uploadRcDocument = (req, res) => {
 
       return res.status(200).json({
         message: "RC document uploaded successfully",
-        filePath: filePath,
-        deliveryPerson: deliveryPerson, // Optionally return the updated delivery person object
+        filePath,
+        deliveryPerson,
       });
     } catch (error) {
       console.error("Error updating delivery person:", error);
@@ -365,7 +372,6 @@ const uploadRcDocument = (req, res) => {
     }
   });
 };
-
 
   
   const RiderToPostDetails = async (req, res) => {
